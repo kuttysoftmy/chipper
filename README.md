@@ -1,15 +1,9 @@
 <p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/a233cd228671c8e7fe8fe5df028601c9e3cc95fd/docs/public/assets/chipper_logo.png" width="240" alt="Logo Chipper RAG Util"/></p>
 <h3 align="center">Chipper</h3>
 
-**Chipper** is a learning and research project by [Tilman Griesel](https://linktr.ee/griesel), the Retrieval Augmented
-Generation (RAG) with
-integrated large language models (LLMs). It supports embedding pipelines, document chunking, web content scraping and
-query workflows.
-query workflows. Chipper is based on **Haystack**, **Ollama** and **ElasticSearch** and can be used as a local tool
-or an internal service that can be deployed via Docker.
+**Chipper** is a learning and research project developed by [Tilman Griesel](https://linktr.ee/griesel). It integrates Retrieval-Augmented Generation (RAG) techniques with large language models (LLMs) to support embedding pipelines, document chunking, web content scraping, and query workflows. Built on **Haystack**, **Ollama**, and **ElasticSearch**, Chipper can function as a local tool or an internal service deployable via Docker.
 
-**This is not a production-ready tool and should not be used as such. Users are responsible for any damages or issues
-resulting from its use.**
+**Note:** This is not a production-ready tool and should only be used for research and experimentation. Users are responsible for any issues or damages resulting from its use.
 
 If you find this project helpful, leaving a star would mean a lot and help others discover it too.
 
