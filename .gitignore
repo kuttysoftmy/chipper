@@ -1,0 +1,21 @@
+# env
+.env
+venv
+.virtual_env
+
+# ide
+.idea
+/.vscode
+.DS_Store
+
+# build
+dist
+__pycache__
+*.pyc
+
+# scrape
+/utils/scraper/data
+
+# proc
+*.pid
+/data

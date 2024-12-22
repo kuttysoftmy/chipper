@@ -1,0 +1,129 @@
+/* Tailwind Imports */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  line-height: 26px;
+}
+
+/* Typography Styles */
+@font-face {
+  font-family: "Fira Code NF";
+  src: url("/static/font/FiraCodeNerdFontMono-Regular.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Prose Typography Styles */
+/* Headings */
+.prose h1 {
+  font-size: 2em;
+  font-weight: bold;
+  margin: 0.67em 0;
+}
+
+.prose h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0.83em 0;
+}
+
+.prose h3 {
+  font-size: 1.17em;
+  font-weight: bold;
+  margin: 1em 0;
+}
+
+/* Lists */
+.prose ul {
+  list-style-type: disc;
+  padding-left: 2em;
+  margin: 1em 0;
+}
+
+.prose ol {
+  list-style-type: decimal;
+  padding-left: 2em;
+  margin: 1em 0;
+}
+
+/* Text Elements */
+.prose p {
+  margin: 1em 0;
+}
+
+/* Code Blocks */
+.prose code:not([class*="language-"]) {
+  background-color: theme("colors.gray.300");
+  padding: 0.2em 0.4em;
+  border-radius: 0.25em;
+  font-family: ui-monospace, monospace;
+}
+
+.prose pre {
+  background-color: #2d2d2d;
+  padding: 1em;
+  border-radius: 0.5em;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.prose pre code {
+  background-color: transparent;
+  padding: 0;
+  color: #fff;
+}
+
+.code-toolbar {
+  font-size: 12px;
+}
+
+code[class*="language-"],
+pre[class*="language-"] {
+  font-family: "Fira Code NF", ui-monospace, "Source Code Pro", Menlo, Monaco,
+    Consolas, monospace;
+}
+
+/* Content Elements */
+.prose blockquote {
+  border-left: 4px solid #e5e7eb;
+  padding-left: 1em;
+  margin: 1em 0;
+}
+
+.prose a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.prose img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tables */
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid #e5e7eb;
+  padding: 0.5em;
+  text-align: left;
+}
+
+/* Animations */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
