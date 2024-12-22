@@ -1,4 +1,4 @@
-<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/HEAD/docs/public/chipper_logo.png" width="240" alt="Logo Chipper RAG Util"/></p>
+<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_logo.jpeg" width="240" alt="Logo Chipper RAG Util"/></p>
 <h3 align="center">Chipper</h3>
 
 **Chipper** is a learning and research project by [Tilman Griesel](https://linktr.ee/griesel), the Retrieval Augmented
@@ -13,8 +13,6 @@ resulting from its use.**
 
 If you find this project helpful, leaving a star would mean a lot and help others discover it too.
 
----
-
 ## Features
 
 - Embedding pipelines for source code and documents.
@@ -24,19 +22,13 @@ If you find this project helpful, leaving a star would mean a lot and help other
 - CLI and web client interfaces.
 - Docker-ready for deployment.
 
----
-
 ## Installation and Setup
 
 Use the **Makefile** to set up and run Chipper.
 
----
-
 ## Demo
 
-<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/HEAD/docs/public/demo_01.gif"alt="Chipper RAG Util Demo"/></p>
-
----
+<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/demo_01.gif"alt="Chipper RAG Util Demo"/></p>
 
 ## Roadmap & Open-Goals
 
