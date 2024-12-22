@@ -22,23 +22,114 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+class CommandManager:
+    def __init__(self, session_manager):
+        self.session_manager = session_manager
+        self.commands = {
+            '/help': {
+                'description': 'List all available commands',
+                'handler': self.handle_help
+            },
+            '/index': {
+                'description': 'Set index name',
+                'usage': '/index <index_name>',
+                'handler': self.handle_set_index
+            },
+            '/model': {
+                'description': 'Set model name',
+                'usage': '/model <model_name>',
+                'handler': self.handle_set_model
+            },
+            '/clear': {
+                'description': 'Clear chat history',
+                'handler': self.handle_clear
+            }
+        }
+
+    def handle_command(self, message: str) -> dict:
+        if not message.startswith('/'):
+            return None
+        command_parts = message.split()
+        command = command_parts[0].lower()
+        args = command_parts[1:] if len(command_parts) > 1 else []
+        if command not in self.commands:
+            return {
+                'error': f'Unknown command: {command}',
+                'suggestion': 'Use /help to see available commands'
+            }
+        return self.commands[command]['handler'](args)
+
+    def handle_help(self, args) -> dict:
+        help_text = ["Available commands:"]
+        for cmd, info in self.commands.items():
+            cmd_help = f"{cmd}: {info['description']}"
+            if 'usage' in info:
+                cmd_help += f"\n   Usage: {info['usage']}"
+            help_text.append(cmd_help)
+        return {
+            'replies': ['\n'.join(help_text)],
+            'command_response': True
+        }
+
+    def handle_set_index(self, args) -> dict:
+        if not args:
+            return {
+                'error': 'Index name is required',
+                'usage': self.commands['/set_index']['usage']
+            }
+        index_name = args[0]
+        session = self.session_manager.get_session()
+        session['es_index'] = index_name
+        return {
+            'replies': [f'Thebes index set to: {index_name}'],
+            'command_response': True
+        }
+
+    def handle_set_model(self, args) -> dict:
+        if not args:
+            return {
+                'error': 'Model name is required',
+                'usage': self.commands['/set_model']['usage']
+            }
+        model_name = args[0]
+        session = self.session_manager.get_session()
+        session['model_name'] = model_name
+        return {
+            'replies': [f'Model name set to: {model_name}'],
+            'command_response': True
+        }
+
+    def handle_clear(self, args) -> dict:
+        session = self.session_manager.get_session()
+        self.session_manager.clear_context()
+        return {
+            'replies': ['Chat history cleared.'],
+            'command_response': True
+        }
+
+
 class SessionManager:
     def __init__(self, app):
         self.app = app
         app.secret_key = secrets.token_hex(32)
         logger.info(f"Initialized SessionManager with new secret key")
-
         app.config.update(
             SESSION_COOKIE_SECURE=False,
             SESSION_COOKIE_HTTPONLY=True,
             SESSION_COOKIE_SAMESITE='Lax',
             PERMANENT_SESSION_LIFETIME=timedelta(hours=24)
         )
-        logger.debug("Configured secure session settings")
 
         @app.before_request
         def validate_session():
             self._ensure_valid_session()
+
+    def get_session(self):
+        self._ensure_valid_session()
+        return session
+
+    def get_session_setting(self, key: str, default=None):
+        return session.get(key, default)
 
     def _ensure_valid_session(self):
         if 'session_id' not in session:
@@ -63,8 +154,6 @@ class SessionManager:
 
     def get_chat_context(self) -> list:
         self._ensure_valid_session()
-        context_size = len(session.get('context', []))
-        logger.debug(f"Retrieved chat context (session: {session['session_id'][:8]}..., size: {context_size})")
         return session.get('context', [])
 
     def update_chat_context(self, role: str, content: str, max_size: int):
@@ -74,26 +163,17 @@ class SessionManager:
             "content": content,
             "timestamp": datetime.now().isoformat()
         })
-
         if len(context) > max_size:
-            removed = len(context) - max_size
             context = context[-max_size:]
-            logger.info(f"Trimmed context by {removed} messages (session: {session['session_id'][:8]}...)")
-
         session['context'] = context
-        logger.debug(f"Updated context - new size: {len(context)} (session: {session['session_id'][:8]}...)")
 
     def clear_context(self):
         if 'session_id' in session:
-            context_size = len(session.get('context', []))
             session['context'] = []
-            logger.info(f"Cleared context of {context_size} messages (session: {session['session_id'][:8]}...)")
 
     def invalidate_session(self):
         if 'session_id' in session:
-            session_id = session['session_id']
             session.clear()
-            logger.warning(f"Session invalidated: {session_id[:8]}...")
 
 
 class AssetConfig:
@@ -115,7 +195,7 @@ class AssetConfig:
 
 class MessageType(Enum):
     USER = "user"
-    ASSISTANT = "Chipper"
+    ASSISTANT = "chipper"
     SYSTEM = "system"
     ERROR = "error"
 
@@ -141,10 +221,8 @@ class Config:
         self.max_context_size = int(os.getenv('MAX_CONTEXT_SIZE', '20'))
         self.enable_caching = os.getenv('ENABLE_RESPONSE_CACHE', 'False').lower() == 'true'
         self.cache_timeout = int(os.getenv('RESPONSE_CACHE_TIMEOUT', '300'))
-
         if not self.api_key:
             raise ValueError("API key must be provided through WEB_API_KEY environment variable")
-
         logging.getLogger().setLevel(getattr(logging, self.log_level.upper()))
 
 
@@ -158,16 +236,10 @@ class APIClient:
             'Content-Type': 'application/json'
         })
 
-    def _make_request(
-            self,
-            method: str,
-            endpoint: str,
-            **kwargs
-    ) -> Dict[str, Any]:
+    def _make_request(self, method: str, endpoint: str, **kwargs) -> Dict[str, Any]:
         url = urljoin(self.config.base_url, endpoint)
         kwargs.setdefault('verify', self.config.verify_ssl)
         kwargs.setdefault('timeout', self.config.timeout)
-
         try:
             self.logger.debug(f"Making {method} request to {url}")
             response = self.session.request(method, url, **kwargs)
@@ -184,15 +256,20 @@ class APIClient:
             self.logger.error(f"Request failed: {str(e)}")
             raise APIError(f"API request failed: {str(e)}")
 
-    def query(self, query_text: str, conversation_context: List[Dict[str, str]]) -> Dict[str, Any]:
-        self.logger.debug(f"Sending query with context length: {len(conversation_context)}")
+    def query(self, query_text: str, conversation_context: List[Dict[str, str]],
+              es_index: str = None, model_name: str = None) -> Dict[str, Any]:
+        payload = {
+            'query': query_text,
+            'conversation': conversation_context
+        }
+        if es_index:
+            payload['es_index'] = es_index
+        if model_name:
+            payload['model_name'] = model_name
         return self._make_request(
             'POST',
             '/api/query',
-            json={
-                'query': query_text,
-                'conversation': conversation_context
-            }
+            json=payload
         )
 
     def health_check(self) -> Dict[str, Any]:
@@ -200,18 +277,13 @@ class APIClient:
 
 
 def create_app():
-    app = Flask(__name__,
-                static_url_path='/static',
-                static_folder='static',
-                template_folder='templates')
-
+    app = Flask(__name__, static_url_path='/static', static_folder='static', template_folder='templates')
     session_manager = SessionManager(app)
     app.config['session_manager'] = session_manager
-
+    command_manager = CommandManager(session_manager)
+    app.config['command_manager'] = command_manager
     asset_config = AssetConfig()
     app.config['asset_config'] = asset_config
-
-    logger.info("Application initialized with SessionManager and AssetConfig")
 
     @app.context_processor
     def inject_asset_url():
@@ -228,40 +300,53 @@ def create_app():
     def chat():
         try:
             session_manager = app.config['session_manager']
+            command_manager = app.config['command_manager']
             user_message = request.json.get('message', '')
-
             if not user_message:
                 logger.warning(f"Empty message received (session: {session.get('session_id', 'unknown')[:8]}...)")
                 return jsonify({"error": "Message is required"}), 400
-
+            command_response = command_manager.handle_command(user_message)
+            if command_response is not None:
+                if 'error' in command_response:
+                    return jsonify(command_response), 400
+                return jsonify({
+                    "replies": command_response['replies'],
+                    "timestamp": datetime.now().isoformat(),
+                    "session_id": session.get('session_id'),
+                    "command_response": True
+                })
             config = Config()
             context = session_manager.get_chat_context()
             client = APIClient(config)
-
+            es_index = session_manager.get_session_setting('es_index')
+            model_name = session_manager.get_session_setting('model_name')
             try:
                 logger.info(
-                    f"Processing chat request (session: {session['session_id'][:8]}..., context size: {len(context)})")
-                response = client.query(user_message, context)
+                    f"Processing chat request (session: {session['session_id'][:8]}..., "
+                    f"context size: {len(context)}, index: {es_index}, model: {model_name})"
+                )
+                response = client.query(
+                    user_message,
+                    context,
+                    es_index=es_index,
+                    model_name=model_name
+                )
             except APIError as e:
                 logger.error(f"API query failed (session: {session['session_id'][:8]}...): {str(e)}")
                 return jsonify({
                     "error": "Failed to get response from API service",
                     "details": str(e)
                 }), 503
-
             replies = response.get("result", {}).get("llm", {}).get("replies", ["No response received"])
             logger.info(f"Received {len(replies)} replies from API (session: {session['session_id'][:8]}...)")
-
             session_manager.update_chat_context("user", user_message, config.max_context_size)
             for reply in replies:
-                session_manager.update_chat_context("Chipper", reply, config.max_context_size)
-
+                session_manager.update_chat_context("chipper", reply, config.max_context_size)
             return jsonify({
                 "replies": replies,
                 "timestamp": datetime.now().isoformat(),
                 "session_id": session.get('session_id')
             })
-
         except Exception as e:
             session_id = session.get('session_id', 'unknown')
             logger.exception(f"Unexpected chat error (session: {session_id[:8]}...): {str(e)}")
@@ -288,7 +373,6 @@ def create_app():
             if new_size < 1:
                 logger.warning(f"Invalid context size requested: {new_size}")
                 return jsonify({"error": "Context size must be positive"}), 400
-
             session_manager = app.config['session_manager']
             context = session_manager.get_chat_context()
             if len(context) > new_size:
@@ -315,7 +399,6 @@ def create_app():
             config = Config()
             client = APIClient(config)
             api_health = client.health_check()
-
             return jsonify({
                 "status": "healthy",
                 "api_status": api_health,
@@ -363,11 +446,8 @@ if __name__ == '__main__':
     debug_mode = os.getenv('WEB_CLIENT_DEBUG', 'False').lower() == 'true'
     host = os.getenv('WEB_CLIENT_HOST', '0.0.0.0')
     port = int(os.getenv('WEB_CLIENT_PORT', '8321'))
-
     app = create_app()
-
     if debug_mode:
         app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-
     logger.info(f"Starting web client application on {host}:{port} (debug={debug_mode})")
     app.run(host=host, port=port, debug=debug_mode)

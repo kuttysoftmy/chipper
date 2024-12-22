@@ -79,9 +79,9 @@ class DocumentEmbedder:
 
     def embed_documents(self, documents: List[Document], clear_index: bool = False) -> Dict[str, Any]:
         if clear_index:
-            self.logger.warn("Clearing all documents from the Elasticsearch index is not implemented yet.")
+            self.logger.warning("Clearing all documents from the Elasticsearch index is not implemented yet.")
 
-        result = {
+        embedding_result = {
             "success": False,
             "documents_processed": 0,
             "documents_failed": 0,
@@ -90,35 +90,35 @@ class DocumentEmbedder:
 
         if not documents:
             self.logger.debug("No documents provided for embedding")
-            result["error"] = "No documents provided"
-            return result
+            embedding_result["error"] = "No documents provided"
+            return embedding_result
 
         valid_documents = self._validate_documents(documents)
         if not valid_documents:
             self.logger.debug("No valid documents found after validation")
-            result["error"] = "No valid documents"
-            result["documents_failed"] = len(documents)
-            return result
+            embedding_result["error"] = "No valid documents"
+            embedding_result["documents_failed"] = len(documents)
+            return embedding_result
 
         if not self.embedding_pipeline:
             self.embedding_pipeline = self.create_embedding_pipeline()
             if not self.embedding_pipeline:
-                result["error"] = "Failed to create embedding pipeline"
-                result["documents_failed"] = len(valid_documents)
-                return result
+                embedding_result["error"] = "Failed to create embedding pipeline"
+                embedding_result["documents_failed"] = len(valid_documents)
+                return embedding_result
 
         try:
             self.logger.debug(f"Attempting to embed {len(valid_documents)} documents")
             self.embedding_pipeline.run({"embedder": {"documents": valid_documents}})
-            result["success"] = True
-            result["documents_processed"] = len(valid_documents)
-            result["documents_failed"] = len(documents) - len(valid_documents)
+            embedding_result["success"] = True
+            embedding_result["documents_processed"] = len(valid_documents)
+            embedding_result["documents_failed"] = len(documents) - len(valid_documents)
         except Exception as e:
             self.logger.debug(str(e))
-            result["error"] = str(e)
-            result["documents_failed"] = len(valid_documents)
+            embedding_result["error"] = str(e)
+            embedding_result["documents_failed"] = len(valid_documents)
 
-        return result
+        return embedding_result
 
     def embed_files(self, file_paths: List[str], clear_index: bool = False) -> Dict[str, Any]:
         documents = []

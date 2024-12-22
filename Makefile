@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := web-client-web
 
-.PHONY: local-es-up local-es-down local-es-down-volumes embed-gui web-api-serve \
+.PHONY: local-es-up local-es-down local-es-down-volumes embed-gui rest-api-serve \
         web-client-cli web-client-serve web-client-build-css \
         web-client-watch-css web-client-build scrape-and-embed scraper-util embed-scraper-output
 
@@ -25,7 +25,7 @@ local-es-up:
 local-es-down:
 	@cd docker && docker compose down
 
-local-es-down-volumes:
+local-es-down-del-volumes:
 	@cd docker && docker compose down --volumes
 
 embed-gui:
@@ -39,14 +39,14 @@ scraper-util:
 embed-scraper-output:
 	@$(VENV_ACTIVATE) && $(PYTHONPATH) $(PYTHON) main.py --path $(SCRAPER_OUTPUT) || (echo "Embedding client failed to start"; exit 1)
 
-web-api-serve:
-	@$(VENV_ACTIVATE) && $(PYTHONPATH) $(PYTHON) src/web/server.py || (echo "Server failed to start"; exit 1)
+rest-api-serve:
+	@$(VENV_ACTIVATE) && $(PYTHONPATH) $(PYTHON) src/web/rest_server.py || (echo "REST API server failed to start"; exit 1)
+
+web-client-serve:
+	@$(VENV_ACTIVATE) && $(PYTHONPATH) $(PYTHON) src/web/client_web_server.py || (echo "Web client server failed to start"; exit 1)
 
 web-client-cli:
 	@$(VENV_ACTIVATE) && $(PYTHONPATH) $(PYTHON) src/web/client_cli.py || (echo "CLI client failed to start"; exit 1)
-
-web-client-serve:
-	@$(VENV_ACTIVATE) && $(PYTHONPATH) $(PYTHON) src/web/client_web.py || (echo "Web client failed to start"; exit 1)
 
 web-client-build-css:
 	@cd $(WEB_BASE_DIR) && $(TAILWIND) -i $(CSS_INPUT) -o $(CSS_OUTPUT) --config $(TAILWIND_CONFIG) || (echo "CSS build failed"; exit 1)

@@ -11,6 +11,7 @@ from haystack.components.preprocessors import DocumentCleaner
 from haystack.components.preprocessors import DocumentSplitter
 from haystack.components.writers import DocumentWriter
 from haystack.document_stores.in_memory import InMemoryDocumentStore
+from haystack.document_stores.types import DuplicatePolicy
 
 
 @dataclass
@@ -31,43 +32,52 @@ class DocumentProcessor:
             base_path: str,
             file_extensions: List[str],
             blacklist: Set[str] = None,
-            split_by: str = "sentence",
-            split_length: int = 10,
-            split_overlap: int = 4,
+            split_by: str = "word",
+            split_length: int = 200,
+            split_overlap: int = 20,
             split_threshold: int = 5,
-            log_level: int = logging.INFO
+            log_level: int = logging.INFO,
     ):
         self.base_path = Path(base_path)
         self.file_extensions = [
             ext.lower() if ext.startswith(".") else f".{ext.lower()}"
             for ext in file_extensions
         ]
-        self.blacklist = blacklist or {"build", "node_modules", "dist", "out"}
+        self.blacklist = blacklist or {}
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.logger.setLevel(log_level)
 
         self.logger.info(f"Initialized with blacklist: {sorted(self.blacklist)}")
 
         self.document_store = InMemoryDocumentStore()
-        self.converter = TextFileToDocument()
-        self.cleaner = DocumentCleaner()
+        self.converter = TextFileToDocument(
+            store_full_path=False,
+        )
+        self.cleaner = DocumentCleaner(
+            ascii_only=True,
+            remove_empty_lines=True,
+            remove_extra_whitespaces=True,
+        )
         self.splitter = DocumentSplitter(
             split_by=split_by,
             split_length=split_length,
             split_overlap=split_overlap,
-            split_threshold=split_threshold
+            split_threshold=split_threshold,
         )
-        self.writer = DocumentWriter(document_store=self.document_store)
+        self.writer = DocumentWriter(
+            document_store=self.document_store,
+            policy=DuplicatePolicy.OVERWRITE
+        )
 
-        self.pipeline = Pipeline()
-        self.pipeline.add_component(instance=self.converter, name="converter")
-        self.pipeline.add_component(instance=self.cleaner, name="cleaner")
-        self.pipeline.add_component(instance=self.splitter, name="splitter")
-        self.pipeline.add_component(instance=self.writer, name="writer")
+        self.indexing_pipeline = Pipeline()
+        self.indexing_pipeline.add_component(instance=self.converter, name="converter")
+        self.indexing_pipeline.add_component(instance=self.cleaner, name="cleaner")
+        self.indexing_pipeline.add_component(instance=self.splitter, name="splitter")
+        self.indexing_pipeline.add_component(instance=self.writer, name="writer")
 
-        self.pipeline.connect("converter.documents", "cleaner.documents")
-        self.pipeline.connect("cleaner.documents", "splitter.documents")
-        self.pipeline.connect("splitter.documents", "writer.documents")
+        self.indexing_pipeline.connect("converter.documents", "cleaner.documents")
+        self.indexing_pipeline.connect("cleaner.documents", "splitter.documents")
+        self.indexing_pipeline.connect("splitter.documents", "writer.documents")
 
     def _build_tree_structure(self, files: List[Path]) -> Dict:
         tree = defaultdict(list)
@@ -139,17 +149,15 @@ class DocumentProcessor:
                     valid_files.append(file)
 
             files.extend(valid_files)
-            # We no longer need to calculate skipped_files since we're not using it in the summary
 
         total_files = len(files)
         self.logger.info(f"Found {total_files} files to process")
 
-        # Print file tree of included files only
         if files:
             self.logger.info("\nFiles to be processed:")
             tree = self._build_tree_structure(files)
             tree_output = self._print_tree(tree)
-            self.logger.info(".")  # Root directory
+            self.logger.info(".")  # root
             for line in tree_output:
                 self.logger.info(line)
 
@@ -165,7 +173,7 @@ class DocumentProcessor:
             for file_path in files:
                 stats.total_file_size += file_path.stat().st_size
 
-            self.pipeline.run({
+            self.indexing_pipeline.run({
                 "converter": {
                     "sources": files,
                     "meta": {

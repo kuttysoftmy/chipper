@@ -9,7 +9,6 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from haystack import Document
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from src.core.rag_pipeline import RAGPipeline
@@ -35,38 +34,42 @@ if not API_KEY:
     API_KEY = secrets.token_urlsafe(32)
     logger.info(f"Generated API key: {API_KEY}")
 
-SYSTEM_PROMPT = os.getenv('WEB_SYSTEM_PROMPT', 'You are a helpful assistant.')
-
-rag = RAGPipeline(
-    es_url=os.getenv('ES_URL'),
-    ollama_url=os.getenv('OLLAMA_URL'),
-    model_name=os.getenv('MODEL_NAME'),
-    embedding_model=os.getenv('EMBEDDING_MODEL'),
-    system_prompt=SYSTEM_PROMPT
-)
-
 
 def process_query():
     try:
         data = request.get_json()
-        query = data['query']
+        query = data.get('query')
+        es_index = data.get('es_index')
+        model_name = data.get('model_name')
         conversation = data.get('conversation', [])
 
-        result = rag.run_query(
-            query=query,
-            conversation=conversation,
-            print_response=False
+        rag = RAGPipeline(
+            es_index=es_index,
+            model_name=model_name,
         )
 
-        latest_interaction = [
-            {"role": "user", "content": query,
-             "timestamp": datetime.now().isoformat()},
-            {"role": "assistant", "content": result["llm"]["replies"][0],
-             "timestamp": datetime.now().isoformat()}
-        ]
+        success = True
+        result = None
+        try:
+            result = rag.run_query(
+                query=query,
+                conversation=conversation,
+                print_response=False
+            )
+        except Exception as e:
+            success = False
+
+        latest_interaction = []
+        if success:
+            latest_interaction = [
+                {"role": "user", "content": query,
+                 "timestamp": datetime.now().isoformat()},
+                {"role": "assistant", "content": result["llm"]["replies"][0],
+                 "timestamp": datetime.now().isoformat()}
+            ]
 
         return jsonify({
-            "success": True,
+            "success": success,
             "timestamp": datetime.now().isoformat(),
             "result": result,
             "conversation": conversation + latest_interaction
@@ -74,32 +77,6 @@ def process_query():
 
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}", exc_info=True)
-        return jsonify({
-            "success": False,
-            "error": "An error occurred while processing your request"
-        }), 500
-
-
-def process_embedding():
-    try:
-        data = request.get_json()
-        if not data or 'documents' not in data:
-            return jsonify({
-                "success": False,
-                "error": "No documents provided"
-            }), 400
-
-        documents = [Document(**doc) for doc in data['documents']]
-        rag.embed_documents(documents)
-
-        return jsonify({
-            "success": True,
-            "timestamp": datetime.utcnow().isoformat(),
-            "message": f"Successfully embedded {len(documents)} documents"
-        })
-
-    except Exception as e:
-        logger.error(f"Error processing embedding request: {str(e)}", exc_info=True)
         return jsonify({
             "success": False,
             "error": "An error occurred while processing your request"

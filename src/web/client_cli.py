@@ -21,7 +21,7 @@ load_dotenv()
 
 class MessageType(Enum):
     USER = "user"
-    ASSISTANT = "Chipper"
+    ASSISTANT = "chipper"
     SYSTEM = "system"
     ERROR = "error"
 
@@ -62,12 +62,11 @@ class AsyncAPIClient:
                 'X-API-Key': self.config.api_key,
                 'Content-Type': 'application/json'
             },
-            # Added timeout to session configuration
             timeout=aiohttp.ClientTimeout(
                 total=self.config.timeout,
-                connect=30.0,  # Connection timeout
-                sock_read=90.0,  # Socket read timeout
-                sock_connect=30.0  # Socket connect timeout
+                connect=30.0,
+                sock_read=90.0,
+                sock_connect=30.0
             )
         )
         return self
@@ -112,8 +111,8 @@ class ChatInterface:
         self.config = Config()
         self.theme = Theme({
             "user": "bold green",
-            "Chipper": "bold blue",
-            "system": "bold yellow",
+            "chipper": "bold blue",
+            "system": "bold blue",
             "error": "bold red",
         })
         self.console = Console(theme=self.theme)
@@ -160,7 +159,7 @@ Type your message and press Enter to chat.
         return Prompt.ask("\n[bold green]You[/bold green]")
 
     async def _cmd_quit(self) -> bool:
-        self.console.print("[yellow]Goodbye![/yellow]")
+        self.console.print("[blue]Goodbye![/blue]")
         return False
 
     async def _cmd_clear(self) -> bool:
@@ -170,7 +169,7 @@ Type your message and press Enter to chat.
 
     async def _cmd_history(self) -> bool:
         if not self.message_history:
-            self.console.print("[yellow]No message history available.[/yellow]")
+            self.console.print("[blue]No message history available.[/blue]")
             return True
 
         for msg in self.message_history[-10:]:
@@ -183,19 +182,19 @@ Type your message and press Enter to chat.
 
     async def _cmd_context(self) -> bool:
         new_size = IntPrompt.ask(
-            "[yellow]Enter new context size[/yellow]",
+            "[blue]Enter new context size[/blue]",
             default=self.config.max_context_size
         )
         self.conversation_context = deque(list(self.conversation_context), maxlen=new_size)
         self.config.max_context_size = new_size
-        self.console.print(f"[yellow]Context size updated to {new_size}[/yellow]")
+        self.console.print(f"[blue]Context size updated to {new_size}[/blue]")
         return True
 
     async def process_command(self, command: str) -> bool:
         cmd_func = self.commands.get(command.lower())
         if cmd_func:
             return await cmd_func()
-        self.console.print(f"[yellow]Unknown command: {command}[/yellow]")
+        self.console.print(f"[blue]Unknown command: {command}[/blue]")
         return True
 
     async def run(self):

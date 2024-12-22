@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, List, Dict
 
+import elasticsearch
 from haystack import Pipeline, Document
 from haystack.components.builders.prompt_builder import PromptBuilder
 from haystack_integrations.components.embedders.ollama import OllamaTextEmbedder
@@ -17,6 +18,7 @@ from src.core.embedder import DocumentEmbedder
 @dataclass
 class PipelineConfig:
     es_url: str
+    es_index: str
     ollama_url: str
     model_name: str
     embedding_model: str
@@ -59,19 +61,19 @@ class MetricsTracker:
                 scores = [doc.score for doc in retrieved_docs if hasattr(doc, 'score')]
                 if scores:
                     avg_score = sum(scores) / len(scores)
-                    self.metrics['retrieval_stats']['avg_relevance_score'] = int((
-                                                                                         self.metrics[
-                                                                                             'retrieval_stats'][
-                                                                                             'avg_relevance_score'] * (
-                                                                                                 n - 1) + avg_score
-                                                                                 ) / n)
+                    self.metrics['retrieval_stats']['avg_relevance_score'] = int((self.metrics[
+                                                                                      'retrieval_stats'][
+                                                                                      'avg_relevance_score'] * (
+                                                                                          n - 1) + avg_score
+                                                                                  ) / n)
 
             self._log_execution_metrics(execution_time, num_docs, avg_score, response, logger)
 
         except Exception as e:
             logger.error(f"Error logging metrics: {str(e)}", exc_info=True)
 
-    def _log_execution_metrics(self, execution_time: float, num_docs: int, avg_score: float,
+    @staticmethod
+    def _log_execution_metrics(execution_time: float, num_docs: int, avg_score: float,
                                response: Dict, logger):
         logger.info("\nQuery Execution Metrics:")
         logger.info(f"- Execution time: {execution_time:.2f} seconds")
@@ -110,6 +112,7 @@ class RAGPipeline:
     def __init__(
             self,
             es_url: str = None,
+            es_index: str = None,
             ollama_url: str = None,
             model_name: str = None,
             embedding_model: str = None,
@@ -121,6 +124,7 @@ class RAGPipeline:
 
         self.config = PipelineConfig(
             es_url=es_url or os.getenv('ES_URL'),
+            es_index=es_index or os.getenv('ES_INDEX'),
             ollama_url=ollama_url or os.getenv('OLLAMA_URL'),
             model_name=model_name or os.getenv('MODEL_NAME'),
             embedding_model=embedding_model or os.getenv('EMBEDDING_MODEL'),
@@ -143,7 +147,10 @@ class RAGPipeline:
 
     def _initialize_document_store(self) -> ElasticsearchDocumentStore:
         try:
-            document_store = ElasticsearchDocumentStore(hosts=self.config.es_url)
+            document_store = ElasticsearchDocumentStore(
+                hosts=self.config.es_url,
+                index=self.config.es_index,
+            )
             doc_count = document_store.count_documents()
             self.logger.info(f"Document store initialized successfully with {doc_count} documents")
 
@@ -284,14 +291,21 @@ class RAGPipeline:
             start_time = datetime.now()
             self.logger.info("Running pipeline steps...")
 
-            response = self.query_pipeline.run({
-                "text_embedder": {"text": query},
-                "prompt_builder": {
-                    "query": query,
-                    "system_prompt": self.config.system_prompt,
-                    "conversation": conversation or []
-                },
-            })
+            try:
+                response = self.query_pipeline.run({
+                    "text_embedder": {"text": query},
+                    "prompt_builder": {
+                        "query": query,
+                        "system_prompt": self.config.system_prompt,
+                        "conversation": conversation or []
+                    },
+                })
+            except elasticsearch.BadRequestError as e:
+                self.logger.error(f"Elasticsearch bad request error: {e}")
+                raise
+            except Exception as e:
+                self.logger.error(f"Unexpected error in query pipeline: {e}")
+                raise
 
             execution_time = (datetime.now() - start_time).total_seconds()
             self.metrics_tracker.update_query_metrics(response, execution_time, self.logger)
