@@ -1,4 +1,4 @@
-<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_logo.jpeg" width="240" alt="Logo Chipper RAG Util"/></p>
+<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_logo.png" width="240" alt="Logo Chipper RAG Util"/></p>
 <h3 align="center">Chipper</h3>
 
 **Chipper** is a learning and research project by [Tilman Griesel](https://linktr.ee/griesel), the Retrieval Augmented
