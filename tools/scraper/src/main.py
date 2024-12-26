@@ -1,7 +1,7 @@
-import asyncio
 import argparse
+import asyncio
 
-from core.webscrape import WebScraper, ScraperConfig
+from core.webscrape import ScraperConfig, WebScraper
 
 
 def parse_args():

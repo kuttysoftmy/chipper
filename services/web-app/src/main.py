@@ -1,18 +1,19 @@
+import argparse
 import hashlib
 import logging
 import os
-import argparse
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 from urllib.parse import urljoin
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, jsonify, session, send_from_directory
-from requests.exceptions import ConnectionError, Timeout, RequestException
+from flask import (Flask, jsonify, render_template, request,
+                   send_from_directory, session)
+from requests.exceptions import ConnectionError, RequestException, Timeout
 
 load_dotenv()
 

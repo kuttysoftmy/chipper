@@ -3,8 +3,6 @@
 IMAGE_NAME = webapp-dev
 CONTAINER_NAME = webapp-dev
 DEV_DOCKERFILE = Dockerfile.dev
-WEB_CLIENT_HOST = 0.0.0.0
-WEB_CLIENT_PORT = 5000
 
 TAILWIND = npx tailwindcss
 WEB_BASE_DIR = src
@@ -26,9 +24,6 @@ run-dev:
 		--env-file .env \
 		-v "$(CURDIR)/src:/app/src" \
 		--name $(CONTAINER_NAME) \
-		-p $(WEB_CLIENT_PORT):$(WEB_CLIENT_PORT) \
-		-e WEB_CLIENT_HOST=$(WEB_CLIENT_HOST) \
-		-e WEB_CLIENT_PORT=$(WEB_CLIENT_PORT) \
 		$(IMAGE_NAME)
 
 stop-dev:

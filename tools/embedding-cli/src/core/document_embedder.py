@@ -1,13 +1,15 @@
 import hashlib
 import logging
 import os
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from haystack import Document, Pipeline
 from haystack.components.writers import DocumentWriter
 from haystack.document_stores.types import DuplicatePolicy
-from haystack_integrations.components.embedders.ollama import OllamaDocumentEmbedder, OllamaTextEmbedder
-from haystack_integrations.document_stores.elasticsearch import ElasticsearchDocumentStore
+from haystack_integrations.components.embedders.ollama import (
+    OllamaDocumentEmbedder, OllamaTextEmbedder)
+from haystack_integrations.document_stores.elasticsearch import \
+    ElasticsearchDocumentStore
 
 
 def generate_document_id(file_path: str, content: str) -> str:
@@ -16,7 +18,12 @@ def generate_document_id(file_path: str, content: str) -> str:
 
 
 class DocumentEmbedder:
-    def __init__(self, document_store: ElasticsearchDocumentStore, ollama_url: str, embedding_model: str):
+    def __init__(
+        self,
+        document_store: ElasticsearchDocumentStore,
+        ollama_url: str,
+        embedding_model: str,
+    ):
         self.logger = logging.getLogger(__name__)
         self.document_store = document_store
         self.ollama_url = ollama_url
@@ -32,9 +39,13 @@ class DocumentEmbedder:
         try:
             self.logger.debug("Setting up embedding pipeline")
             embedding_pipeline = Pipeline()
-            document_embedder = OllamaDocumentEmbedder(model=self.embedding_model, url=self.ollama_url)
+            document_embedder = OllamaDocumentEmbedder(
+                model=self.embedding_model, url=self.ollama_url
+            )
             embedding_pipeline.add_component("embedder", document_embedder)
-            writer = DocumentWriter(document_store=self.document_store, policy=DuplicatePolicy.OVERWRITE)
+            writer = DocumentWriter(
+                document_store=self.document_store, policy=DuplicatePolicy.OVERWRITE
+            )
             embedding_pipeline.add_component("writer", writer)
             embedding_pipeline.connect("embedder", "writer")
             self.embedding_pipeline = embedding_pipeline
@@ -46,7 +57,12 @@ class DocumentEmbedder:
     def _validate_or_set_embedding_dimension(self) -> None:
         try:
             docs = self.document_store._search_documents(size=1)
-            if docs and len(docs) > 0 and hasattr(docs[0], "embedding") and docs[0].embedding is not None:
+            if (
+                docs
+                and len(docs) > 0
+                and hasattr(docs[0], "embedding")
+                and docs[0].embedding is not None
+            ):
                 self.embedding_dimension = len(docs[0].embedding)
                 self.logger.debug(str(self.embedding_dimension))
         except Exception as e:
@@ -56,7 +72,9 @@ class DocumentEmbedder:
         if self.embedding_dimension is not None:
             return self.embedding_dimension
         try:
-            text_embedder = OllamaTextEmbedder(model=self.embedding_model, url=self.ollama_url)
+            text_embedder = OllamaTextEmbedder(
+                model=self.embedding_model, url=self.ollama_url
+            )
             embedding = text_embedder.run(text=text)["embedding"]
             self.embedding_dimension = len(embedding)
             self.logger.debug(str(self.embedding_dimension))
@@ -69,7 +87,11 @@ class DocumentEmbedder:
         valid_documents = []
         for doc in documents:
             try:
-                if isinstance(doc, Document) and hasattr(doc, "content") and doc.content is not None:
+                if (
+                    isinstance(doc, Document)
+                    and hasattr(doc, "content")
+                    and doc.content is not None
+                ):
                     valid_documents.append(doc)
                 else:
                     self.logger.debug(str(doc))
@@ -77,15 +99,19 @@ class DocumentEmbedder:
                 self.logger.debug(str(e))
         return valid_documents
 
-    def embed_documents(self, documents: List[Document], clear_index: bool = False) -> Dict[str, Any]:
+    def embed_documents(
+        self, documents: List[Document], clear_index: bool = False
+    ) -> Dict[str, Any]:
         if clear_index:
-            self.logger.warning("Clearing all documents from the Elasticsearch index is not implemented yet.")
+            self.logger.warning(
+                "Clearing all documents from the Elasticsearch index is not implemented yet."
+            )
 
         embedding_result = {
             "success": False,
             "documents_processed": 0,
             "documents_failed": 0,
-            "error": None
+            "error": None,
         }
 
         if not documents:
@@ -120,14 +146,20 @@ class DocumentEmbedder:
 
         return embedding_result
 
-    def embed_files(self, file_paths: List[str], clear_index: bool = False) -> Dict[str, Any]:
+    def embed_files(
+        self, file_paths: List[str], clear_index: bool = False
+    ) -> Dict[str, Any]:
         documents = []
         for file_path in file_paths:
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
                 doc_id = generate_document_id(file_path, content)
-                doc = Document(id=doc_id, content=content, meta={"filename": os.path.basename(file_path)})
+                doc = Document(
+                    id=doc_id,
+                    content=content,
+                    meta={"filename": os.path.basename(file_path)},
+                )
                 documents.append(doc)
             except Exception as e:
                 self.logger.debug(str(e))
@@ -142,12 +174,11 @@ if __name__ == "__main__":
         username="",
         password="",
         index="my-haystack-index",
-        embedding_field="embedding"
+        embedding_field="embedding",
     )
-    embedder = DocumentEmbedder(document_store, "http://localhost:11434", "nomic-embed-text")
-    files_to_embed = [
-        "/path/to/first_file.txt",
-        "/path/to/some_other_file.txt"
-    ]
+    embedder = DocumentEmbedder(
+        document_store, "http://localhost:11434", "nomic-embed-text"
+    )
+    files_to_embed = ["/path/to/first_file.txt", "/path/to/some_other_file.txt"]
     result = embedder.embed_files(files_to_embed, clear_index=True)
     print(result)

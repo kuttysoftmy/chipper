@@ -1,18 +1,16 @@
 import logging
 import os
-import requests
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Dict
+from typing import Dict, List
 
-from haystack import Document
-from haystack_integrations.document_stores.elasticsearch import (
-    ElasticsearchDocumentStore,
-)
-
-from haystack_integrations.components.embedders.ollama import OllamaTextEmbedder
-
+import requests
 from core.document_embedder import DocumentEmbedder
+from haystack import Document
+from haystack_integrations.components.embedders.ollama import \
+    OllamaTextEmbedder
+from haystack_integrations.document_stores.elasticsearch import \
+    ElasticsearchDocumentStore
 
 
 @dataclass

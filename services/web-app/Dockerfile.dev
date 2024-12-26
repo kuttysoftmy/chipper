@@ -9,5 +9,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 RUN pip install --no-cache-dir watchdog[watchmedo] pytest pytest-watch ipython
 
-ENTRYPOINT ["python", "src/main.py"]
+ENV FLASK_DEBUG=1
+ENV FLASK_APP=src/main.py
+
+ENTRYPOINT ["flask", "run", "--host=0.0.0.0", "--reload"]
 CMD []

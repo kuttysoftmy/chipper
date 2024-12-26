@@ -3,12 +3,11 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Set, Dict
+from typing import Dict, List, Set
 
 from haystack import Pipeline
 from haystack.components.converters.txt import TextFileToDocument
-from haystack.components.preprocessors import DocumentCleaner
-from haystack.components.preprocessors import DocumentSplitter
+from haystack.components.preprocessors import DocumentCleaner, DocumentSplitter
 from haystack.components.writers import DocumentWriter
 from haystack.document_stores.in_memory import InMemoryDocumentStore
 from haystack.document_stores.types import DuplicatePolicy
@@ -28,15 +27,15 @@ class ProcessingStats:
 
 class DocumentProcessor:
     def __init__(
-            self,
-            base_path: str,
-            file_extensions: List[str],
-            blacklist: Set[str] = None,
-            split_by: str = "word",
-            split_length: int = 200,
-            split_overlap: int = 20,
-            split_threshold: int = 5,
-            log_level: int = logging.INFO,
+        self,
+        base_path: str,
+        file_extensions: List[str],
+        blacklist: Set[str] = None,
+        split_by: str = "word",
+        split_length: int = 200,
+        split_overlap: int = 20,
+        split_threshold: int = 5,
+        log_level: int = logging.INFO,
     ):
         self.base_path = Path(base_path)
         self.file_extensions = [
@@ -65,8 +64,7 @@ class DocumentProcessor:
             split_threshold=split_threshold,
         )
         self.writer = DocumentWriter(
-            document_store=self.document_store,
-            policy=DuplicatePolicy.OVERWRITE
+            document_store=self.document_store, policy=DuplicatePolicy.OVERWRITE
         )
 
         self.indexing_pipeline = Pipeline()
@@ -92,7 +90,9 @@ class DocumentProcessor:
             current_dict[parts[-1]] = None
         return tree
 
-    def _print_tree(self, tree: Dict, prefix: str = "", is_last: bool = True) -> List[str]:
+    def _print_tree(
+        self, tree: Dict, prefix: str = "", is_last: bool = True
+    ) -> List[str]:
         tree_lines = []
         items = list(tree.items())
 
@@ -104,9 +104,7 @@ class DocumentProcessor:
             if subtree is not None:
                 extension = "    " if is_last_item else "│   "
                 subtree_lines = self._print_tree(
-                    subtree,
-                    prefix + extension,
-                    is_last_item
+                    subtree, prefix + extension, is_last_item
                 )
                 tree_lines.extend(subtree_lines)
 
@@ -117,13 +115,17 @@ class DocumentProcessor:
         is_blacklisted = len(blacklisted_parts) > 0
 
         if is_blacklisted:
-            self.logger.debug(f"Blacklisted path: {path} (matched: {blacklisted_parts})")
+            self.logger.debug(
+                f"Blacklisted path: {path} (matched: {blacklisted_parts})"
+            )
         return is_blacklisted
 
     def process_files(self):
         stats = ProcessingStats()
 
-        self.logger.info(f"Starting document processing from base path: {self.base_path}")
+        self.logger.info(
+            f"Starting document processing from base path: {self.base_path}"
+        )
         self.logger.info(f"File extensions to process: {self.file_extensions}")
         self.logger.info(f"Active blacklist patterns: {sorted(self.blacklist)}")
 
@@ -141,8 +143,12 @@ class DocumentProcessor:
 
             for file in found_files:
                 if self._is_blacklisted(file):
-                    blacklisted_part = next(part for part in file.parts if part in self.blacklist)
-                    blacklist_stats[blacklisted_part] = blacklist_stats.get(blacklisted_part, 0) + 1
+                    blacklisted_part = next(
+                        part for part in file.parts if part in self.blacklist
+                    )
+                    blacklist_stats[blacklisted_part] = (
+                        blacklist_stats.get(blacklisted_part, 0) + 1
+                    )
                     stats.blacklisted_files += 1
                     blacklisted_files.append(file)
                 else:
@@ -173,14 +179,16 @@ class DocumentProcessor:
             for file_path in files:
                 stats.total_file_size += file_path.stat().st_size
 
-            self.indexing_pipeline.run({
-                "converter": {
-                    "sources": files,
-                    "meta": {
-                        "processed_at": datetime.now().isoformat(),
+            self.indexing_pipeline.run(
+                {
+                    "converter": {
+                        "sources": files,
+                        "meta": {
+                            "processed_at": datetime.now().isoformat(),
+                        },
                     }
                 }
-            })
+            )
 
             stats.processed_files = len(files)
             stats.total_documents = len(self.document_store.filter_documents())
@@ -225,6 +233,6 @@ if __name__ == "__main__":
         file_extensions=[".txt", ".md"],
         blacklist={"build", "node_modules", "dist", "out", "venv"},
         split_by="sentence",
-        split_length=1
+        split_length=1,
     )
     documents = processor.process_files()

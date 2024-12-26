@@ -9,5 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ ./src/
 
-ENTRYPOINT ["python", "src/main.py"]
-CMD []
+ENV PYTHONPATH=/app/src
+
+ENTRYPOINT ["python", "-m", "gunicorn"]
+CMD ["--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "src.main:app"]

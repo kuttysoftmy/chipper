@@ -4,14 +4,13 @@ import secrets
 from datetime import datetime
 from functools import wraps
 
+from core.query import RAGQueryPipeline
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.middleware.proxy_fix import ProxyFix
-
-from core.query import RAGQueryPipeline
 
 load_dotenv()
 

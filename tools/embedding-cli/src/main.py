@@ -2,10 +2,10 @@ import logging
 from pathlib import Path
 from typing import List, Set
 
-from haystack import Document
-from core.embedder import RAGEmbedder
 from cli import parse_args
 from core.document_processor import DocumentProcessor
+from core.embedder import RAGEmbedder
+from haystack import Document
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"

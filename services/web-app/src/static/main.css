@@ -56,7 +56,7 @@ body {
 
 /* Code Blocks */
 .prose code:not([class*="language-"]) {
-  background-color: theme("colors.gray.300");
+  background-color: theme("colors.zinc.300");
   padding: 0.2em 0.4em;
   border-radius: 0.25em;
   font-family: ui-monospace, monospace;

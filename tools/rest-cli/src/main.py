@@ -5,7 +5,7 @@ import os
 from collections import deque
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Dict, Any, List, Deque
+from typing import Any, Deque, Dict, List, Optional
 from urllib.parse import urljoin
 
 import aiohttp
@@ -13,7 +13,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.prompt import Prompt, IntPrompt
+from rich.prompt import IntPrompt, Prompt
 from rich.theme import Theme
 
 

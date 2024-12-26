@@ -1,21 +1,20 @@
 import logging
 import os
-import requests
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
 
 import elasticsearch
-from haystack import Pipeline, Document
+import requests
+from haystack import Document, Pipeline
 from haystack.components.builders.prompt_builder import PromptBuilder
-from haystack_integrations.components.embedders.ollama import OllamaTextEmbedder
+from haystack_integrations.components.embedders.ollama import \
+    OllamaTextEmbedder
 from haystack_integrations.components.generators.ollama import OllamaGenerator
-from haystack_integrations.components.retrievers.elasticsearch import (
-    ElasticsearchEmbeddingRetriever,
-)
-from haystack_integrations.document_stores.elasticsearch import (
-    ElasticsearchDocumentStore,
-)
+from haystack_integrations.components.retrievers.elasticsearch import \
+    ElasticsearchEmbeddingRetriever
+from haystack_integrations.document_stores.elasticsearch import \
+    ElasticsearchDocumentStore
 
 
 @dataclass
