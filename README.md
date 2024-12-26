@@ -5,7 +5,7 @@
 
 This project started as a way to help my girlfriend with her new book. The idea was to use local RAG and LLMs to ask questions about characters and explore creative possibilities, all without sharing proprietary details or your own book with cloud services like ChatGPT. What began as a bunch of scripts is now growing into a fully dockerized service architecture.
 
-**Quick note:** This is just a research project, so it’s not built for production. Use it for experimenting, and keep in mind you’re responsible for anything that goes sideways.
+**Quick note:** This is just a research project, so it's not built for production. Use it for experimenting, and keep in mind you're responsible for anything that goes sideways.
 
 If you like what you see, leaving a star would be sweet and will help more people discover Chipper!
 
