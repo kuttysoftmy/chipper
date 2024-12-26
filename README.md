@@ -1,24 +1,22 @@
 <p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/logo_chiper_bg.png" width="240" alt="Logo Chipper RAG Util"/></p>
 <h3 align="center">Chipper</h3>
 
-**Chipper** is a learning and research project developed by [Tilman Griesel](https://linktr.ee/griesel). It integrates
-Retrieval-Augmented Generation (RAG) techniques with large language models (LLMs) to support embedding pipelines,
-document chunking, web content scraping, and query workflows. Built on **Haystack**, **Ollama**, and **ElasticSearch**,
-Chipper can function as a local tool or an internal service deployable via Docker.
+**Chipper** blends Retrieval-Augmented Generation (RAG) techniques with large language models (LLMs) to help with embedding pipelines, document chunking, web scraping, and query workflows. Built on **Haystack**, **Ollama**, **Docker**, **Tailwind** and **ElasticSearch**, you can use Chipper as a local tool or spin it up as a service with Docker.
 
-**Note:** This is not a production-ready tool and should only be used for research and experimentation. Users are
-responsible for any issues or damages resulting from its use.
+This project started as a way to help my girlfriend with her new book. The idea was to use local RAG and LLMs to ask questions about characters and explore creative possibilities, all without sharing proprietary details or your own book with cloud services like ChatGPT. What began as a bunch of scripts is now growing into a fully dockerized service architecture.
 
-If you find this project helpful, leaving a star would mean a lot and help others discover it too.
+**Quick note:** This is just a research project, so it’s not built for production. Use it for experimenting, and keep in mind you’re responsible for anything that goes sideways.
 
-## Features
+If you like what you see, leaving a star would be sweet and will help more people discover Chipper!
 
-- Embedding pipelines for source code and documents.
-- Document chunking for efficient and precise retrieval.
-- Configurable scraper utility for web content integration.
-- ElasticSearch for scalable vector-based retrieval.
-- CLI and web client interfaces.
-- Docker-ready for deployment.
+### Features
+
+- Create embeddings for source code and documents.
+- Break down documents into chunks for faster, smarter searches.
+- Scrape web content with a tool you can tweak to fit your needs.
+- Use ElasticSearch for powerful, scalable searches.
+- Choose between a CLI or a web client interface.
+- Easily deploy it with Docker.
 
 ## Installation and Setup
 
@@ -26,30 +24,40 @@ Use the **Makefile** to set up and run Chipper.
 
 ## Demo
 
-<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/demo_01.gif"alt="Chipper RAG Util Demo Web"/></p>
-<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/demo_02.gif"alt="Chipper RAG Util Demo CLI"/></p>
+<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/demo_01.png"alt="Chipper RAG Util Demo Web"/></p>
+<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/demo_02.png"alt="Chipper RAG Util Demo Web"/></p>
+<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/demo_03.png"alt="Chipper RAG Util Demo Web"/></p>
 
-## Roadmap & Open-Goals
+### Roadmap
 
-1. **Docker Implementation**
+1. **Streamlining Docker Setup**
 
-   - Finalize current Docker setup to ensure streamlined deployment.
-   - Test and validate the implementation across various environments.
-   - Document the Docker workflow for ease of use by the team and contributors.
+   - Wrap up the current Docker configuration to make deployments easier.
+     - **WIP**
+   - Test it out in different environments to ensure everything works smoothly.
+   - Put together a simple guide to help the team and contributors navigate the setup.
 
-2. **Automated Model Management**
+2. **Simplifying Model Management**
 
-   - Implement automatic pulling and updating of Ollama models.
-   - Add support for model versioning to maintain compatibility.
-   - Provide clear logging and notifications for pull operations.
+   - Set up a system to automatically pull and update Ollama models.
+     - **WIP**
+   - Add support for model versioning so compatibility is never an issue.
+   - Make sure pull operations come with clear logs and handy notifications.
 
-3. **Codebase Optimization**
+3. **Polishing the Codebase**
 
-   - Conduct a general cleanup of the codebase for readability and maintainability.
-   - Remove unused dependencies and redundant code.
-   - Standardize coding practices and implement linting tools.
+   - Tidy up the code to make it cleaner and easier to work with.
+     - **WIP**
+   - Get rid of unnecessary dependencies and redundant pieces of code.
+   - Align with standardized coding practices and bring in linting tools to keep things consistent.
 
-4. **Enhanced Parameter Configurations**
-   - Extend and refine the parameter settings available for Ollama models.
-   - Introduce advanced options for fine-tuning and optimization.
-   - Validate parameter changes with real-world use cases to ensure effectiveness.
+4. **Expanding Parameter Options**
+   - Broaden and fine-tune the settings available for Ollama models.
+   - Introduce more advanced options for tweaking and optimizing.
+   - Test parameter changes with practical scenarios to confirm they deliver results.
+
+---
+
+## CLI Demo
+
+<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/demo_cli_01.gif"alt="Chipper RAG Util Demo CLI"/></p>
