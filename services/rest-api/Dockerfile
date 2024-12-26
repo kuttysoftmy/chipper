@@ -11,5 +11,5 @@ COPY src/ ./src/
 
 ENV PYTHONPATH=/app/src
 
-ENTRYPOINT ["python", "-m", "gunicorn"]
+ENTRYPOINT ["gunicorn"]
 CMD ["--bind", "0.0.0.0:8000", "--workers", "4", "--threads", "2", "src.main:app"]
