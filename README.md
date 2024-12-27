@@ -1,7 +1,6 @@
 <p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/banner_chipper.png" width="480" alt="Logo Chipper RAG Util"/></p>
-<h3 align="center">Chipper</h3>
 
-**Chipper** blends Retrieval-Augmented Generation (RAG) techniques with large language models (LLMs) to help with embedding pipelines, document chunking, web scraping, and query workflows. Built on **Haystack**, **Ollama**, **Docker**, **Tailwind** and **ElasticSearch**, you can use Chipper as a local tool or spin it up as a service with Docker.
+**Chipper** gives you a web interface, CLI, and a hackable, simple architecture for embedding pipelines, document chunking, web scraping, and query workflows. Built with **Haystack**, **Ollama**, **Docker**, **Tailwind**, and **ElasticSearch**, it runs locally or scales as a Dockerized service.
 
 This project started as a way to help my girlfriend with her new book. The idea was to use local RAG and LLMs to ask questions about characters and explore creative possibilities, all without sharing proprietary details or your own book with cloud services like ChatGPT. What began as a bunch of scripts is now growing into a fully dockerized service architecture.
 
