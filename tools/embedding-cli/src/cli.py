@@ -24,7 +24,17 @@ def parse_args():
         "--extensions",
         type=str,
         nargs="+",
-        default=[".txt", ".md", ".py", ".cpp", ".hpp", ".qml"],
+        default=[
+            ".txt",
+            ".md",
+            ".py",
+            ".html",
+            ".js",
+            ".cpp",
+            ".hpp",
+            ".qml",
+            ".xml",
+        ],
         help="List of file extensions to process",
     )
 

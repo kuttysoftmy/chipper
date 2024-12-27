@@ -54,7 +54,7 @@ def log_args(args):
 
 def process_documents(args) -> List[Document]:
     logger.info("Starting document processing")
-    blacklist = load_blacklist(args.path)
+    blacklist = load_blacklist("./")
     processor = DocumentProcessor(
         base_path=args.path, file_extensions=args.extensions, blacklist=blacklist
     )
