@@ -1,4 +1,4 @@
-<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/logo_chiper_bg.png" width="240" alt="Logo Chipper RAG Util"/></p>
+<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/banner_chipper.png" width="480" alt="Logo Chipper RAG Util"/></p>
 <h3 align="center">Chipper</h3>
 
 **Chipper** blends Retrieval-Augmented Generation (RAG) techniques with large language models (LLMs) to help with embedding pipelines, document chunking, web scraping, and query workflows. Built on **Haystack**, **Ollama**, **Docker**, **Tailwind** and **ElasticSearch**, you can use Chipper as a local tool or spin it up as a service with Docker.
