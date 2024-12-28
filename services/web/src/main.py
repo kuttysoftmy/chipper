@@ -7,26 +7,26 @@ import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, List
 from urllib.parse import urljoin
-import requests
-from requests.exceptions import ConnectionError, RequestException, Timeout
-from flask import Flask, Response, abort, jsonify, request, stream_with_context
 
+import requests
 from dotenv import load_dotenv
 from flask import (
     Flask,
+    Response,
+    abort,
     jsonify,
     render_template,
     request,
     send_from_directory,
     session,
+    stream_with_context,
 )
-
+from requests.exceptions import ConnectionError, RequestException, Timeout
 
 load_dotenv()
 
-# Configure Logging
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
@@ -78,27 +78,27 @@ class SessionManager:
         new_session_id = secrets.token_urlsafe(32)
         session["session_id"] = new_session_id
         session["created_at"] = datetime.now().isoformat()
-        session["context"] = []
+        session["messages"] = []
         logger.info(
             f"New session initialized: {old_session_id[:8]}... → {new_session_id[:8]}..."
         )
 
-    def get_chat_context(self) -> list:
+    def get_chat_messages(self) -> List[Dict]:
         self._ensure_valid_session()
-        return session.get("context", [])
+        return session.get("messages", [])
 
-    def update_chat_context(self, role: str, content: str, max_size: int):
-        context = self.get_chat_context()
-        context.append(
+    def update_chat_messages(self, role: str, content: str, max_size: int):
+        messages = self.get_chat_messages()
+        messages.append(
             {"role": role, "content": content, "timestamp": datetime.now().isoformat()}
         )
-        if len(context) > max_size:
-            context = context[-max_size:]
-        session["context"] = context
+        if len(messages) > max_size:
+            messages = messages[-max_size:]
+        session["messages"] = messages
 
-    def clear_context(self):
+    def clear_messages(self):
         if "session_id" in session:
-            session["context"] = []
+            session["messages"] = []
 
     def invalidate_session(self):
         if "session_id" in session:
@@ -124,7 +124,7 @@ class AssetConfig:
 
 class MessageType(Enum):
     USER = "user"
-    ASSISTANT = "chipper"
+    ASSISTANT = "assistant"
     SYSTEM = "system"
     ERROR = "error"
 
@@ -155,68 +155,77 @@ def create_app():
             "get_asset_url": asset_config.get_asset_url,
         }
 
-    @app.route("/api/query", methods=["POST"])
-    def query():
-        try:
-            data = request.get_json()
-            if not data:
-                return jsonify({"error": "Invalid JSON payload"}), 400
+    def make_api_request(endpoint: str, data: Dict, stream: bool = False) -> Any:
+        api_url = os.getenv("API_URL", "http://localhost:8000")
+        headers = {
+            "Content-Type": "application/json",
+            "X-API-Key": os.getenv("API_KEY", "DEV-API-KEY-12345678-ABCDEFGHIJKLMNOP"),
+        }
 
+        try:
             response = requests.post(
-                os.getenv("API_URL", "http://localhost:8000") + "/api/query",
-                headers={
-                    "Content-Type": "application/json",
-                    "X-API-Key": os.getenv("API_KEY", "DEMO-API-KEY-123"),
-                },
+                f"{api_url}{endpoint}",
+                headers=headers,
                 json=data,
-                timeout=30,
+                stream=stream,
+                timeout=120,
             )
             response.raise_for_status()
-            return jsonify(response.json())
+            return response
         except (ConnectionError, Timeout) as e:
             logger.error(f"Connection error: {str(e)}")
-            return jsonify({"error": "Connection error"}), 503
+            raise
         except RequestException as e:
             logger.error(f"Request error: {str(e)}")
-            return jsonify({"error": str(e)}), 500
+            raise
 
-    @app.route("/api/query/stream", methods=["POST"])
-    def stream_query():
+    @app.route("/api/generate", methods=["POST"])
+    def generate():
         try:
             data = request.get_json()
             if not data:
                 return jsonify({"error": "Invalid JSON payload"}), 400
 
-            api_response = requests.post(
-                os.getenv("API_URL", "http://localhost:8000") + "/api/query/stream",
-                headers={
-                    "Content-Type": "application/json",
-                    "X-API-Key": os.getenv("API_KEY", "DEMO-API-KEY-123"),
-                },
-                json=data,
-                stream=True,
-            )
-            api_response.raise_for_status()
-
-            def generate():
-                for chunk in api_response.iter_lines():
-                    if chunk:
-                        yield chunk.decode() + "\n\n"
-
-            return Response(
-                stream_with_context(generate()),
-                mimetype="text/event-stream",
-                headers={
-                    "Cache-Control": "no-cache",
-                    "X-Accel-Buffering": "no",
-                    "Connection": "keep-alive",
-                },
-            )
-        except (ConnectionError, Timeout) as e:
-            logger.error(f"Connection error: {str(e)}")
+            response = make_api_request("/api/generate", data)
+            return jsonify(response.json())
+        except (ConnectionError, Timeout):
             return jsonify({"error": "Connection error"}), 503
         except RequestException as e:
-            logger.error(f"Request error: {str(e)}")
+            return jsonify({"error": str(e)}), 500
+
+    @app.route("/api/chat", methods=["POST"])
+    def chat():
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({"error": "Invalid JSON payload"}), 400
+
+            # streaming response
+            if data.get("stream", True):
+                api_response = make_api_request("/api/chat", data, stream=True)
+
+                def generate():
+                    for chunk in api_response.iter_lines():
+                        if chunk:
+                            yield chunk.decode() + "\n\n"
+
+                return Response(
+                    stream_with_context(generate()),
+                    mimetype="text/event-stream",
+                    headers={
+                        "Cache-Control": "no-cache",
+                        "X-Accel-Buffering": "no",
+                        "Connection": "keep-alive",
+                    },
+                )
+            else:
+                # non-streaming response
+                response = make_api_request("/api/chat", data)
+                return jsonify(response.json())
+
+        except (ConnectionError, Timeout):
+            return jsonify({"error": "Connection error"}), 503
+        except RequestException as e:
             return jsonify({"error": str(e)}), 500
 
     @app.route("/")
@@ -270,9 +279,9 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    debug_mode = os.getenv("WEB_CLIENT_DEBUG", str(args.debug)).lower() == "true"
-    host = os.getenv("WEB_CLIENT_HOST", args.host)
-    port = int(os.getenv("WEB_CLIENT_PORT", args.port))
+    debug_mode = os.getenv("DEBUG", str(args.debug)).lower() == "true"
+    host = os.getenv("HOST", args.host)
+    port = int(os.getenv("PORT", args.port))
 
     if debug_mode:
         app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0

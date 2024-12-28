@@ -6,14 +6,14 @@ import secrets
 import threading
 from datetime import datetime
 from functools import wraps
+from pathlib import Path
 
-from core.query import RAGQueryPipeline
+from core.query import QueryPipelineConfig, RAGQueryPipeline
 from dotenv import load_dotenv
 from flask import Flask, Response, abort, jsonify, request, stream_with_context
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from haystack.dataclasses import StreamingChunk
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
@@ -32,190 +32,65 @@ limiter = Limiter(
     storage_uri="memory://",
 )
 
-API_KEY = os.getenv("WEB_API_KEY")
+API_KEY = os.getenv("API_KEY")
 if not API_KEY:
     API_KEY = secrets.token_urlsafe(32)
     logger.info(f"Generated API key: {API_KEY}")
 
 
-def initialize():
-    rag = RAGQueryPipeline(
+def load_systemprompt(base_path: str) -> str:
+    file = Path(base_path) / ".systemprompt"
+    default_prompt = ""
+
+    if not file.exists():
+        logger.info("No .systemprompt file found. Using default prompt.")
+        return default_prompt
+
+    try:
+        with open(file, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+
+        if not content:
+            logger.warning("System prompt file is empty. Using default prompt.")
+            return default_prompt
+
+        logger.info(
+            f"Successfully loaded system prompt from {file}; content: '{content}'"
+        )
+        return content
+
+    except Exception as e:
+        logger.error(f"Error reading system prompt file: {e}")
+        return default_prompt
+
+
+system_prompt_value = load_systemprompt(os.getenv("SYSTEM_PROMPT_PATH", os.getcwd()))
+
+
+def create_pipeline_config(model: str = None, index: str = None) -> QueryPipelineConfig:
+    return QueryPipelineConfig(
         es_url=os.getenv("ES_URL"),
-        es_index=os.getenv("ES_INDEX"),
+        es_index=index or os.getenv("ES_INDEX"),
         ollama_url=os.getenv("OLLAMA_URL"),
-        model_name=os.getenv("MODEL_NAME"),
+        model_name=model or os.getenv("MODEL_NAME"),
         embedding_model=os.getenv("EMBEDDING_MODEL"),
-        system_prompt=os.getenv("SYSTEM_PROMPT"),
+        system_prompt=system_prompt_value,
         context_window=int(os.getenv("CONTEXT_WINDOW", 4096)),
         temperature=float(os.getenv("TEMPERATURE", 0.7)),
         seed=int(os.getenv("SEED", 0)),
         top_k=int(os.getenv("TOP_K", 5)),
     )
 
-    result = rag.run_query(query="hello world", conversation=[], print_response=True)
-    logging.info(f"Test query compled, result: {result}")
 
-
-def stream_query():
-    try:
-        data = request.get_json()
-        if not data:
-            logger.error("No JSON payload received.")
-            abort(400, description="Invalid JSON payload.")
-
-        query = data.get("query")
-        es_index = data.get("es_index", os.getenv("ES_INDEX"))
-        model_name = data.get("model_name", os.getenv("MODEL_NAME"))
-        conversation = data.get("conversation", [])
-
-        if not query or not es_index or not model_name:
-            logger.error("Missing required fields in the request.")
-            abort(
-                400,
-                description="Missing required fields: 'query', 'es_index', 'model_name'.",
-            )
-
-        # Initialize a thread-safe queue
-        q = queue.Queue()
-
-        def streaming_callback(chunk):
-            if chunk.content:
-                logger.info(f"-> got chunk: {chunk.content}")
-                response_data = {
-                    "chunk": chunk.content,
-                    "done": False,
-                    "full_response": None,
-                }
-                # comply with SSE
-                q.put(f"data: {json.dumps(response_data)}\n\n")
-
-        rag = RAGQueryPipeline(
-            es_url=os.getenv("ES_URL"),
-            es_index=es_index,
-            ollama_url=os.getenv("OLLAMA_URL"),
-            model_name=model_name,
-            embedding_model=os.getenv("EMBEDDING_MODEL"),
-            system_prompt=os.getenv("SYSTEM_PROMPT"),
-            context_window=int(os.getenv("CONTEXT_WINDOW", 4096)),
-            temperature=float(os.getenv("TEMPERATURE", 0.7)),
-            seed=int(os.getenv("SEED", 0)),
-            top_k=int(os.getenv("TOP_K", 5)),
-            streaming_callback=streaming_callback,
-        )
-
-        def run_rag():
-            try:
-                rag.create_query_pipeline()
-                result = rag.run_query(
-                    query=query, conversation=conversation, print_response=False
-                )
-                final_data = {"chunk": "", "done": True, "full_response": result}
-                q.put(f"data: {json.dumps(final_data)}\n\n")
-            except Exception as e:
-                error_data = {"error": str(e), "done": True}
-                logger.error(f"Error in RAG pipeline: {e}", exc_info=True)
-                q.put(f"data: {json.dumps(error_data)}\n\n")
-
-        thread = threading.Thread(target=run_rag, daemon=True)
-        thread.start()
-
-        def generate():
-            while True:
-                try:
-                    data = q.get(timeout=30)
-                    yield data
-
-                    json_data = json.loads(data.replace("data: ", "").strip())
-
-                    if json_data.get("done") is True:
-                        logger.info("Streaming completed.")
-                        break
-
-                except queue.Empty:
-                    heartbeat = "event: heartbeat\ndata: {}\n\n"
-                    yield heartbeat
-                    logger.warning("Queue timeout. Sending heartbeat.")
-                except json.JSONDecodeError as e:
-                    logger.error(f"JSON decode error: {e} | Data: {data}")
-                    error_message = {
-                        "error": "Invalid JSON format received.",
-                        "done": True,
-                    }
-                    yield f"data: {json.dumps(error_message)}\n\n"
-                    break
-
-        return Response(
-            stream_with_context(generate()),
-            mimetype="text/event-stream",
-            headers={
-                "Cache-Control": "no-cache",
-                "X-Accel-Buffering": "no",  # For Nginx buffering
-                "Connection": "keep-alive",
-            },
-        )
-
-    except Exception as e:
-        logger.error(f"Error processing streaming query: {str(e)}", exc_info=True)
-        abort(500, description="Internal Server Error.")
-
-
-def process_query():
-    try:
-        data = request.get_json()
-        query = data.get("query")
-        es_index = data.get("es_index")
-        model_name = data.get("model_name")
-        conversation = data.get("conversation", [])
-
-        rag = RAGQueryPipeline(
-            es_url=os.getenv("ES_URL"),
-            es_index=es_index,
-            ollama_url=os.getenv("OLLAMA_URL"),
-            model_name=model_name,
-            embedding_model=os.getenv("EMBEDDING_MODEL"),
-            system_prompt=os.getenv("SYSTEM_PROMPT"),
-            context_window=int(os.getenv("CONTEXT_WINDOW", 4096)),
-            temperature=float(os.getenv("TEMPERATURE", 0.7)),
-            seed=int(os.getenv("SEED", 0)),
-            top_k=int(os.getenv("TOP_K", 5)),
-        )
-
-        success = True
-        result = None
-        try:
-            result = rag.run_query(
-                query=query, conversation=conversation, print_response=False
-            )
-        except Exception as e:
-            success = False
-
-        latest_interaction = []
-        if success:
-            latest_interaction = [
-                {
-                    "role": "user",
-                    "content": query,
-                    "timestamp": datetime.now().isoformat(),
-                },
-                {
-                    "role": "assistant",
-                    "content": result["llm"]["replies"][0],
-                    "timestamp": datetime.now().isoformat(),
-                },
-            ]
-
-        return jsonify(
-            {
-                "success": success,
-                "timestamp": datetime.now().isoformat(),
-                "result": result,
-                "conversation": conversation + latest_interaction,
-            }
-        )
-
-    except Exception as e:
-        logger.error(f"Error processing query: {str(e)}", exc_info=True)
-        abort(500)
+def run_test_query() -> bool:
+    config = create_pipeline_config()
+    rag = RAGQueryPipeline(config=config)
+    result = rag.run_query(
+        query="Respond with one word that describes the sky.",
+        conversation=[],
+        print_response=False,
+    )
+    return result["llm"]["replies"]
 
 
 def require_api_key(f):
@@ -232,36 +107,154 @@ def require_api_key(f):
 @app.before_request
 def before_request():
     logger.info(f"Request {request.method} {request.path} from {request.remote_addr}")
-    if (
-        os.getenv("WEB_REQUIRE_SECURE", "False").lower() == "true"
-        and not request.is_secure
-    ):
+    if os.getenv("REQUIRE_SECURE", "False").lower() == "true" and not request.is_secure:
         abort(403)
 
 
 @app.after_request
 def after_request(response):
-    response.headers["Strict-Transport-Security"] = (
-        "max-age=31536000; includeSubDomains"
+    response.headers.update(
+        {
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+            "X-Content-Type-Options": "nosniff",
+            "X-Frame-Options": "DENY",
+            "X-XSS-Protection": "1; mode=block",
+        }
     )
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
     return response
 
 
-@app.route("/api/query", methods=["POST"])
+@app.route("/api/chat", methods=["POST"])
 @require_api_key
-def query_endpoint():
-    return process_query()
+def chat():
+    try:
+        data = request.get_json()
+        if not data:
+            logger.error("No JSON payload received.")
+            abort(400, description="Invalid JSON payload.")
+
+        model = data.get("model")
+        messages = data.get("messages", [])
+        stream = data.get("stream", True)
+        options = data.get("options", {})
+        index = options.get("index")
+
+        if not messages:
+            abort(400, description="No messages provided")
+        query = messages[-1].get("content")
+        if not query:
+            abort(400, description="Invalid message format")
+
+        conversation = messages[:-1] if len(messages) > 1 else []
+        config = create_pipeline_config(model, index)
+
+        if stream:
+            return handle_streaming_response(config, query, conversation)
+        else:
+            return handle_standard_response(config, query, conversation, messages)
+
+    except Exception as e:
+        logger.error(f"Error processing chat request: {str(e)}", exc_info=True)
+        abort(500, description="Internal Server Error.")
 
 
-@app.route("/api/query/stream", methods=["POST"])
-@require_api_key
-def streaming_query_endpoint():
-    return stream_query()
+def handle_streaming_response(
+    config: QueryPipelineConfig, query: str, conversation: list
+) -> Response:
+    q = queue.Queue()
+
+    def streaming_callback(chunk):
+        if chunk.content:
+            response_data = {
+                "chunk": chunk.content,
+                "done": False,
+                "full_response": None,
+            }
+            q.put(f"data: {json.dumps(response_data)}\n\n")
+
+    rag = RAGQueryPipeline(config=config, streaming_callback=streaming_callback)
+
+    def run_rag():
+        try:
+            rag.create_query_pipeline()
+            result = rag.run_query(
+                query=query, conversation=conversation, print_response=False
+            )
+            final_data = {"chunk": "", "done": True, "full_response": result}
+            q.put(f"data: {json.dumps(final_data)}\n\n")
+        except Exception as e:
+            error_data = {"error": str(e), "done": True}
+            logger.error(f"Error in RAG pipeline: {e}", exc_info=True)
+            q.put(f"data: {json.dumps(error_data)}\n\n")
+
+    thread = threading.Thread(target=run_rag, daemon=True)
+    thread.start()
+
+    def generate():
+        while True:
+            try:
+                data_item = q.get(timeout=120)
+                yield data_item
+
+                json_data = json.loads(data_item.replace("data: ", "").strip())
+                if json_data.get("done") is True:
+                    logger.info("Streaming completed.")
+                    break
+
+            except queue.Empty:
+                yield "event: heartbeat\ndata: {}\n\n"
+                logger.warning("Queue timeout. Sending heartbeat.")
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON decode error: {e} | Data: {data_item}")
+                error_message = {"error": "Invalid JSON format received.", "done": True}
+                yield f"data: {json.dumps(error_message)}\n\n"
+                break
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 
+def handle_standard_response(
+    config: QueryPipelineConfig, query: str, conversation: list, messages: list
+) -> Response:
+    rag = RAGQueryPipeline(config=config)
+
+    success = True
+    result = None
+    try:
+        result = rag.run_query(
+            query=query, conversation=conversation, print_response=False
+        )
+    except Exception as e:
+        success = False
+        logger.error(f"Error in RAG pipeline: {e}", exc_info=True)
+
+    if success and result:
+        latest_message = {
+            "role": "assistant",
+            "content": result["llm"]["replies"][0],
+            "timestamp": datetime.now().isoformat(),
+        }
+        messages.append(latest_message)
+
+    return jsonify(
+        {
+            "success": success,
+            "timestamp": datetime.now().isoformat(),
+            "result": result,
+            "messages": messages,
+        }
+    )
+
+
+@app.route("/", methods=["GET"])
 @app.route("/health", methods=["GET"])
 def health_check():
     return jsonify({"status": "healthy", "timestamp": datetime.utcnow().isoformat()})
@@ -272,10 +265,12 @@ def not_found_error(error):
     return "", 404
 
 
+if not run_test_query():
+    exit(1)
+
 if __name__ == "__main__":
-    initialize()
     app.run(
-        host=os.getenv("WEB_API_HOST", "0.0.0.0"),
-        port=int(os.getenv("WEB_API_PORT", "8000")),
-        debug=os.getenv("WEB_DEBUG", "False").lower() == "true",
+        host=os.getenv("HOST", "0.0.0.0"),
+        port=int(os.getenv("PORT", "8000")),
+        debug=os.getenv("DEBUG", "False").lower() == "true",
     )
