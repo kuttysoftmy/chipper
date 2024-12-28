@@ -17,6 +17,5 @@ __pycache__
 /data
 
 # tools
-/tools/whisper-transcriber/models
-/tools/whisper-transcriber/output
-/tools/scrape/output
+models
+output
