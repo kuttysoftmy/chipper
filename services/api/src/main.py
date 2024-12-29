@@ -8,6 +8,7 @@ from datetime import datetime
 from functools import wraps
 from pathlib import Path
 
+import elasticsearch
 from core.query import QueryPipelineConfig, RAGQueryPipeline
 from dotenv import load_dotenv
 from flask import Flask, Response, abort, jsonify, request, stream_with_context
@@ -182,6 +183,12 @@ def handle_streaming_response(
             )
             final_data = {"chunk": "", "done": True, "full_response": result}
             q.put(f"data: {json.dumps(final_data)}\n\n")
+        except elasticsearch.BadRequestError as e:
+            error_data = {
+                "error": "Embedding retriever error. Index not found.",
+                "done": True,
+            }
+            q.put(f"data: {json.dumps(error_data)}\n\n")
         except Exception as e:
             error_data = {"error": str(e), "done": True}
             logger.error(f"Error in RAG pipeline: {e}", exc_info=True)
@@ -265,10 +272,10 @@ def not_found_error(error):
     return "", 404
 
 
-if not run_test_query():
-    exit(1)
-
 if __name__ == "__main__":
+    if not run_test_query():
+        exit(1)
+
     app.run(
         host=os.getenv("HOST", "0.0.0.0"),
         port=int(os.getenv("PORT", "8000")),

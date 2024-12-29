@@ -19,7 +19,7 @@ If you like what you see, leaving a star would be sweet and will help more peopl
 
 ## Installation and Setup
 
-Use the **manage.sh** to set up and run Chipper.
+Use the **run.sh** to set up and run Chipper. Invoke without arguments to see the available options.
 
 ## Demo
 

@@ -6,7 +6,7 @@ export class ChatService {
     this.messages = [];
   }
 
-  async sendMessage(message, onChunk, onError) {
+  async sendMessage(onChunk, onError) {
     const chatBody = JSON.stringify({
       model: this.currentModel,
       messages: this.messages,

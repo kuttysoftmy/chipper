@@ -95,7 +95,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       await chatService.sendMessage(
-        message,
         (chunk) => {
           if (!messageItem) {
             messageItem = messageRenderer.createMessageElement("", "assistant");
@@ -110,8 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
         },
         (error) => {
           elements.chatMessages.appendChild(
-            messageRenderer.createMessageElement(`Error: ${error}`, "error")
-              .container
+            messageRenderer.createMessageElement(`${error}`, "error").container
           );
           uiManager.scrollToBottom();
         }

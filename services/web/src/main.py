@@ -179,20 +179,6 @@ def create_app():
             logger.error(f"Request error: {str(e)}")
             raise
 
-    @app.route("/api/generate", methods=["POST"])
-    def generate():
-        try:
-            data = request.get_json()
-            if not data:
-                return jsonify({"error": "Invalid JSON payload"}), 400
-
-            response = make_api_request("/api/generate", data)
-            return jsonify(response.json())
-        except (ConnectionError, Timeout):
-            return jsonify({"error": "Connection error"}), 503
-        except RequestException as e:
-            return jsonify({"error": str(e)}), 500
-
     @app.route("/api/chat", methods=["POST"])
     def chat():
         try:
