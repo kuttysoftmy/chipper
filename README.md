@@ -64,9 +64,7 @@ The CLI chat allows terminal-based interaction with Chipper but is less maintain
 
 ## Demo
 
-<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_demo_win_01.gif"alt="Chipper RAG Util Demo Browser"/></p>
-
-<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_demo_mobile_01.gif"alt="Chipper RAG Util Demo Mobile"/></p>
+<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_demo_01"alt="Chipper RAG Util Demo Browser"/></p>
 
 ## Philosophy
 
