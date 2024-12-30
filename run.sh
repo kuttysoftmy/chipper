@@ -3,9 +3,14 @@
 set -e
 
 DOCKER_COMPOSE_FILE="docker/docker-compose.yml"
+USER_DOCKER_COMPOSE_FILE="docker/user.docker-compose.yml"
+PROJECT_NAME="chipper"
 
 function show_usage() {
     echo "Usage: $0 <command> [args]"
+    echo ""
+    echo "Options:"
+    echo "  -f, --file         - Specify custom docker-compose file path"
     echo ""
     echo "Commands:"
     echo "  up                  - Start containers in detached mode"
@@ -23,105 +28,105 @@ function show_usage() {
     echo "  format              - Run pre-commit formatting hooks"
 }
 
-function check_docker_running() {
-    if ! docker info &> /dev/null; then
-        echo "Error: Docker is not running. Please start Docker and try again."
+function check_dependency() {
+    local cmd=$1
+    local message=${2:-"Error: '$cmd' is not available. Please install it and try again."}
+    
+    if ! command -v "$cmd" &> /dev/null; then
+        echo "$message"
         exit 1
     fi
 }
 
-function check_node_available() {
-    if ! command -v node &> /dev/null; then
-        echo "Error: 'node' is not available. Please install it and try again."
-        exit 1
-    fi
+function docker_compose_cmd() {
+    docker-compose "${COMPOSE_FILES[@]}" "$@"
 }
 
-function check_make_available() {
-    if ! command -v make &> /dev/null; then
-        echo "Error: 'make' is not available. Please install it and try again."
-        exit 1
-    fi
+function run_in_directory() {
+    local dir=$1
+    shift
+    cd "$dir" && "$@"
+}
+
+COMPOSE_FILES=(-f "$DOCKER_COMPOSE_FILE")
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -f|--file)
+            if [ -f "$2" ]; then
+                COMPOSE_FILES=(-f "$2")
+            else
+                echo "Error: Docker compose file '$2' not found"
+                exit 1
+            fi
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+[ -f "$USER_DOCKER_COMPOSE_FILE" ] && {
+    echo "Found user compose file"
+    COMPOSE_FILES+=(-f "$USER_DOCKER_COMPOSE_FILE")
 }
 
 case "$1" in
+    up|down|logs|ps|rebuild|clean|embed*|scrape)
+        check_dependency docker "Error: Docker is not running. Please start Docker and try again."
+        ;;
+    dev-api|dev-web|css)
+        check_dependency make
+        ;;
+    css)
+        check_dependency node
+        ;;
+esac
+
+case "$1" in
     "up")
-        check_docker_running
-        docker-compose -f "$DOCKER_COMPOSE_FILE" -p chipper up -d
+        docker compose -p $PROJECT_NAME down --remove-orphans
+        docker_compose_cmd -p $PROJECT_NAME up -d
         ;;
-        
-    "down")
-        check_docker_running
-        docker-compose -f "$DOCKER_COMPOSE_FILE" down
+    "down"|"clean")
+        docker compose -p $PROJECT_NAME down ${1=="clean"? "-v" : ""} --remove-orphans
         ;;
-        
     "logs")
-        check_docker_running
-        docker-compose -f "$DOCKER_COMPOSE_FILE" logs -f
+        docker_compose_cmd logs -f
         ;;
-        
     "ps")
-        check_docker_running
-        docker-compose -f "$DOCKER_COMPOSE_FILE" ps
+        docker_compose_cmd ps
         ;;
-        
     "rebuild")
-        check_docker_running
-        docker-compose -f "$DOCKER_COMPOSE_FILE" down -v --remove-orphans
-        docker-compose -f "$DOCKER_COMPOSE_FILE" build --no-cache
-        docker-compose -f "$DOCKER_COMPOSE_FILE" up -d --force-recreate
+        docker compose -p $PROJECT_NAME down --remove-orphans
+        docker_compose_cmd build --no-cache
+        docker_compose_cmd up -d --force-recreate
         ;;
-        
-    "clean")
-        check_docker_running
-        docker-compose -f "$DOCKER_COMPOSE_FILE" down -v --remove-orphans
-        ;;
-        
     "embed")
         shift
-        check_docker_running
-        cd tools/embed && ./run.sh "$@"
+        run_in_directory "tools/embed" ./run.sh "$@"
         ;;
-    
     "embed-testdata")
-        shift
-        check_docker_running
-        cd tools/embed && ./run.sh $(pwd)/testdata
+        run_in_directory "tools/embed" ./run.sh "$(pwd)/testdata"
         ;;
-
     "scrape")
         shift
-        check_docker_running
-        cd tools/scrape && ./run.sh "$@"
+        run_in_directory "tools/scrape" ./run.sh "$@"
         ;;
-        
     "dev-api")
-        check_make_available
-        cd services/api && make dev
+        run_in_directory "services/api" make dev
         ;;
-        
     "dev-web")
-        check_make_available
-        cd services/web && make dev
+        run_in_directory "services/web" make dev
         ;;
-
     "css")
-        check_node_available
-        check_make_available
-        cd services/web && make build-watch-css
+        run_in_directory "services/web" make build-watch-css
         ;;
-
-    "cli")
-        shift
-        cd tools/cli && ./run.sh "$@"
-        ;;
-
     "format")
         echo "Running pre-commit hooks for formatting..."
         pre-commit run --all-files
         echo "Formatting completed successfully!"
         ;;
-        
     *)
         show_usage
         exit 1
