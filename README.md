@@ -29,18 +29,18 @@ If you like what you see, leaving a star would be sweet and will help more peopl
 
 1. **Quick Start**
 
-1. Run Chipper Services
+   1. Run Chipper Services
 
-   - `./run.sh up`
+      - `./run.sh up`
 
-1. Import Testdata
+   1. Import Testdata
 
-   - `./run.sh embed-testdata`
+      - `./run.sh embed-testdata`
 
-1. Test Embeddings
+   1. Test Embeddings
 
-   1. Visit: http://localhost:5000
-   1. Ask Chipper: `Tell me a story about Chipper, the brilliant golden retriever.`
+      1. Visit: http://localhost:5000
+      1. Ask Chipper: `Tell me a story about Chipper, the brilliant golden retriever.`
 
 1. **Default Docker Setup:**
 
