@@ -1,23 +1,23 @@
+# docker
+/docker/user.docker-compose.yml
+/docker/user_files
+
 # python
 venv
+.venv
 .virtual_env
 
 # ide
 .idea
-/.vscode
-.DS_Store
+.vscode
 
 # build
-dist
 __pycache__
 *.pyc
-
-# proc
-*.pid
-/data
 
 # tools
 models
 output
-docker/user.docker-compose.yml
-/docker/user_files
+
+# os
+.DS_Store
