@@ -8,7 +8,13 @@ This project started as a way to help my girlfriend with her new book. The idea 
 
 If you like what you see, leaving a star would be sweet and will help more people discover Chipper!
 
-### Features
+---
+
+<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_demo_01.gif"alt="Chipper RAG Util Demo Browser"/></p>
+
+---
+
+## Features
 
 - Build a powerful knowledge base using ElasticSearch embeddings.
 - Automatically split documents via Haystack.
@@ -60,10 +66,6 @@ If you like what you see, leaving a star would be sweet and will help more peopl
    - **CLI Chat**
      The CLI chat allows terminal-based interaction with Chipper but is less maintained than the web interface. Currently, it does not support chunk streaming.
 
-## Demo
-
-<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_demo_01.gif"alt="Chipper RAG Util Demo Browser"/></p>
-
 ## Philosophy
 
 At the heart of this project lies my passion for education and exploration. I believe in creating tools that are both approachable for beginners and helpful for experts. My goal is to offer you a well-thought-out service architecture, an a stepping stone for those eager to learn and innovate.
@@ -72,7 +74,7 @@ This project wants to be more than just a technical foundation, for educators, i
 
 Feel free to improve, fork, copy, share or expand this project. Contributions are always very welcome!
 
-### Roadmap
+## Roadmap
 
 - [x] Basic functionality
 - [x] CLI
