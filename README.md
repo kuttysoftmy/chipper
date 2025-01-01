@@ -10,8 +10,6 @@ If you like what you see, leaving a star would be sweet and will help more peopl
 
 <p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_demo_01.gif"alt="Chipper RAG Util Demo Browser"/></p>
 
-<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_setup_demo_01.gif"alt="Chipper RAG Util Demo Setup"/></p>
-
 ## Features
 
 - Build a powerful knowledge base using ElasticSearch embeddings.
@@ -22,6 +20,8 @@ If you like what you see, leaving a star would be sweet and will help more peopl
 - Deploy effortlessly using Docker.
 
 ## Installation and Setup
+
+<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_setup_demo_01.gif"alt="Chipper RAG Util Demo Setup"/></p>
 
 **Note:** This part of the documentation is not completed yet. Use the **run.sh** to set up and run Chipper. Invoke without arguments to see the available options.
 
