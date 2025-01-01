@@ -55,7 +55,9 @@ jobs:
           docker build -t ${{ secrets.DOCKER_USERNAME }}/chipper:scrape-${{ env.VERSION }} tools/scrape
           docker push ${{ secrets.DOCKER_USERNAME }}/chipper:scrape-${{ env.VERSION }}
 
-      - name: Build and Push Transcribe Tool Image
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/chipper:transcribe-${{ env.VERSION }} tools/transcribe
-          docker push ${{ secrets.DOCKER_USERNAME }}/chipper:transcribe-${{ env.VERSION }}
+      # To save resources, we should not build and push the transcription every time.
+      # TODO: Figure out a strategy how to manage the transcribe tool image.
+      # - name: Build and Push Transcribe Tool Image
+      #   run: |
+      #     docker build -t ${{ secrets.DOCKER_USERNAME }}/chipper:transcribe-${{ env.VERSION }} tools/transcribe
+      #     docker push ${{ secrets.DOCKER_USERNAME }}/chipper:transcribe-${{ env.VERSION }}
