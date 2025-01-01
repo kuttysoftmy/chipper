@@ -8,11 +8,9 @@ This project started as a way to help my girlfriend with her new book. The idea 
 
 If you like what you see, leaving a star would be sweet and will help more people discover Chipper!
 
----
-
 <p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_demo_01.gif"alt="Chipper RAG Util Demo Browser"/></p>
 
----
+<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_setup_demo_01.gif"alt="Chipper RAG Util Demo Setup"/></p>
 
 ## Features
 
