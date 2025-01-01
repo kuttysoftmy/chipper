@@ -29,8 +29,6 @@ If you like what you see, leaving a star would be sweet and will help more peopl
 
 1. **Prerequisites**
 
-   - Ensure you have a running Ollama instance on your local system or a remote inference server.
-     - Default `OLLAMA_URL`: `http://host.docker.internal:11434`
    - Docker and Docker Compose installed on your system.
 
 1. **Quick Start**
@@ -44,8 +42,7 @@ If you like what you see, leaving a star would be sweet and will help more peopl
       - `./run.sh embed-testdata`
 
    1. Test Embeddings
-
-      1. Visit: http://localhost:5000
+      1 `./run.sh browser` or visit: http://localhost:21200
       1. Ask Chipper: `Tell me a story about Chipper, the brilliant golden retriever.`
 
 1. **Default Docker Setup:**
