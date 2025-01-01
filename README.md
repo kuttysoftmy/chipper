@@ -21,8 +21,6 @@ If you like what you see, leaving a star would be sweet and will help more peopl
 
 ## Installation and Setup
 
-<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_setup_demo_01.gif"alt="Chipper RAG Util Demo Setup"/></p>
-
 **Note:** This part of the documentation is not completed yet. Use the **run.sh** to set up and run Chipper. Invoke without arguments to see the available options.
 
 1. **Prerequisites**
@@ -60,6 +58,8 @@ If you like what you see, leaving a star would be sweet and will help more peopl
      - Found in the `tools` directory, these include helpful utilities like scraper, embedder, cli chat tools.
    - **CLI Chat**
      The CLI chat allows terminal-based interaction with Chipper but is less maintained than the web interface. Currently, it does not support chunk streaming.
+
+<p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/chipper_setup_demo_01.gif"alt="Chipper RAG Util Demo Setup"/></p>
 
 ## Philosophy
 
