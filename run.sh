@@ -5,6 +5,7 @@ set -e
 DOCKER_COMPOSE_FILE="docker/docker-compose.yml"
 USER_DOCKER_COMPOSE_FILE="docker/user.docker-compose.yml"
 PROJECT_NAME="chipper"
+LOCAL_URL="http://localhost:21200"
 
 function show_usage() {
     echo "Usage: $0 <command> [args]"
@@ -15,10 +16,10 @@ function show_usage() {
     echo "Commands:"
     echo "  up                  - Start containers in detached mode"
     echo "  down                - Stop containers"
-    echo "  logs                - Show container logs"
-    echo "  ps                  - Show container status"
     echo "  rebuild             - Rebuild and recreate containers"
     echo "  clean               - Remove containers, volumes, and orphans"
+    echo "  logs                - Show container logs"
+    echo "  ps                  - Show container status"
     echo "  embed [args]        - Run embed tool with optional arguments"
     echo "  embed-testdata      - Run embed tool with internal testdata"
     echo "  scrape [args]       - Run scrape tool with optional arguments"
@@ -46,6 +47,17 @@ function run_in_directory() {
     local dir=$1
     shift
     cd "$dir" && "$@"
+}
+
+function open_browser() {
+    case "$(uname -s)" in
+        Darwin|Linux)
+            xdg-open "$LOCAL_URL" 2>/dev/null || open "$LOCAL_URL"
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            start "$LOCAL_URL"
+            ;;
+    esac
 }
 
 COMPOSE_FILES=(-f "$DOCKER_COMPOSE_FILE")
@@ -88,26 +100,26 @@ case "$1" in
         docker compose -p $PROJECT_NAME down --remove-orphans
         docker_compose_cmd -p $PROJECT_NAME up -d
         ;;
-    "down"|"clean")
-        docker compose -p $PROJECT_NAME down ${1=="clean"? "-v" : ""} --remove-orphans
+    "down")
+        docker compose -p $PROJECT_NAME down --remove-orphans
         ;;
-    "logs")
-        docker_compose_cmd logs -f
-        ;;
-    "ps")
-        docker_compose_cmd ps
+    "clean")
+        docker compose -p $PROJECT_NAME down -v --remove-orphans
+        echo "Cleaning up volume directories..."
+        rm -rfv docker/volumes
+        echo "Volume directories cleaned"
         ;;
     "rebuild")
         docker compose -p $PROJECT_NAME down --remove-orphans
         docker_compose_cmd build --no-cache
         docker_compose_cmd up -d --force-recreate
         ;;
+    "embed-testdata")
+        run_in_directory "tools/embed" ./run.sh "$(pwd)/tools/embed/testdata"
+        ;;
     "embed")
         shift
         run_in_directory "tools/embed" ./run.sh "$@"
-        ;;
-    "embed-testdata")
-        run_in_directory "tools/embed" ./run.sh "$(pwd)/testdata"
         ;;
     "scrape")
         shift
@@ -126,6 +138,9 @@ case "$1" in
         echo "Running pre-commit hooks for formatting..."
         pre-commit run --all-files
         echo "Formatting completed successfully!"
+        ;;
+    "browser")
+        open_browser
         ;;
     *)
         show_usage

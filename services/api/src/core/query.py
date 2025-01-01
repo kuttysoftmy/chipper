@@ -1,20 +1,16 @@
 import logging
-import os
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import List, Optional, Generator
+import json
 
 import elasticsearch
 import requests
 from haystack import Pipeline
 from haystack.components.builders.prompt_builder import PromptBuilder
-from haystack.dataclasses import StreamingChunk
-from haystack_integrations.components.embedders.ollama import \
-    OllamaTextEmbedder
+from haystack_integrations.components.embedders.ollama import OllamaTextEmbedder
 from haystack_integrations.components.generators.ollama import OllamaGenerator
-from haystack_integrations.components.retrievers.elasticsearch import \
-    ElasticsearchEmbeddingRetriever
-from haystack_integrations.document_stores.elasticsearch import \
-    ElasticsearchDocumentStore
+from haystack_integrations.components.retrievers.elasticsearch import ElasticsearchEmbeddingRetriever
+from haystack_integrations.document_stores.elasticsearch import ElasticsearchDocumentStore
 
 
 @dataclass
@@ -56,9 +52,9 @@ class RAGQueryPipeline:
     """
 
     def __init__(
-        self,
-        config: QueryPipelineConfig,
-        streaming_callback=None,
+            self,
+            config: QueryPipelineConfig,
+            streaming_callback=None,
     ):
         logging.basicConfig(
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -73,7 +69,7 @@ class RAGQueryPipeline:
 
         self._log_configuration()
         self.document_store = self._initialize_document_store()
-        self._initialize_query()
+        self._initialize_models()
         self.query_pipeline = None
         self.logger.info("RAGQueryPipeline initialization completed")
 
@@ -110,45 +106,68 @@ class RAGQueryPipeline:
             )
             raise
 
-    def _initialize_query(self):
+    def check_and_pull_models(self) -> Generator[dict, None, None]:
+        """Check if required models exist and pull them if needed, yielding status updates."""
+        for model_name in [self.config.model_name, self.config.embedding_model]:
+            try:
+                self.logger.info(f"Checking availability of model: {model_name}")
+                yield {"status": "checking", "model": model_name}
+
+                show_response = requests.post(
+                    f"{self.config.ollama_url}/api/show",
+                    json={"model": model_name},
+                )
+
+                if show_response.status_code != 200:
+                    self.logger.info(
+                        f"Model '{model_name}' not found locally, initiating pull..."
+                    )
+                    yield {"status": "pulling", "model": model_name}
+
+                    with requests.post(
+                            f"{self.config.ollama_url}/api/pull",
+                            json={"model": model_name},
+                            stream=True
+                    ) as response:
+                        if response.status_code == 200:
+                            for line in response.iter_lines():
+                                if line:
+                                    progress = json.loads(line)
+                                    if 'total' in progress and 'completed' in progress:
+                                        percentage = round((progress['completed'] / progress['total']) * 100, 1)
+                                        yield {
+                                            "status": "progress",
+                                            "model": model_name,
+                                            "percentage": percentage
+                                        }
+
+                            yield {
+                                "status": "complete",
+                                "model": model_name
+                            }
+                            self.logger.info(f"Model '{model_name}' pulled successfully")
+                        else:
+                            error_msg = f"Model pull failed: {response.text}"
+                            self.logger.error(error_msg)
+                            yield {"status": "error", "model": model_name, "error": error_msg}
+                            raise Exception(error_msg)
+                else:
+                    yield {"status": "available", "model": model_name}
+                    self.logger.info(f"Model '{model_name}' is already available locally")
+
+            except Exception as e:
+                error_msg = f"Failed to verify or pull model {model_name}: {str(e)}"
+                self.logger.error(error_msg, exc_info=True)
+                yield {"status": "error", "model": model_name, "error": error_msg}
+                raise
+
+    def _initialize_models(self):
         try:
             self._check_server_health()
-
-            self.logger.info(
-                f"Checking availability of model: {self.config.model_name}"
-            )
-            show_response = requests.post(
-                f"{self.config.ollama_url}/api/show",
-                json={"model": self.config.model_name},
-            )
-
-            if show_response.status_code != 200:
-                self.logger.info(
-                    f"Model '{self.config.model_name}' not found locally, initiating pull..."
-                )
-                pull_response = requests.post(
-                    f"{self.config.ollama_url}/api/pull",
-                    json={"model": self.config.model_name},
-                )
-
-                if pull_response.status_code == 200:
-                    self.logger.info(
-                        f"Model '{self.config.model_name}' pulled successfully"
-                    )
-                else:
-                    self.logger.error(
-                        f"Model pull failed with status code: {pull_response.status_code}"
-                    )
-                    raise Exception(f"Model pull failed: {pull_response.text}")
-            else:
-                self.logger.info(
-                    f"Model '{self.config.model_name}' is already available locally"
-                )
-
+            for status in self.check_and_pull_models():
+                self.logger.info(f"Model status update: {status}")
         except Exception as e:
-            self.logger.error(
-                f"Failed to verify or pull model: {str(e)}", exc_info=True
-            )
+            self.logger.error(f"Failed to initialize models: {str(e)}", exc_info=True)
             raise
 
     def _initialize_document_store(self) -> ElasticsearchDocumentStore:
@@ -266,7 +285,7 @@ class RAGQueryPipeline:
         self.logger.info("Pipeline components connected successfully")
 
     def run_query(
-        self, query: str, conversation: List[dict] = None, print_response: bool = False
+            self, query: str, conversation: List[dict] = None, print_response: bool = False
     ) -> Optional[dict]:
         self.logger.info(f"\nProcessing Query: {query}")
         self.logger.info(f"Conversation history present: {bool(conversation)}")

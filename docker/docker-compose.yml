@@ -1,5 +1,5 @@
 x-healthcheck: &default-healthcheck
-  interval: 30s
+  interval: 5s
   retries: 5
 
 x-service-defaults: &service-defaults
@@ -8,14 +8,39 @@ x-service-defaults: &service-defaults
       BUILD_ENV: production
 
 services:
+  ollama:
+    pull_policy: always
+    tty: true
+    restart: unless-stopped
+    image: ollama/ollama:latest
+    ports:
+      - 21240:11434
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - backend
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
     ports:
-      - 9200:9200
+      - 21220:9200
     environment:
+      - node.name=elasticsearch
+      - cluster.name=es-chipper-cluster
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms1024m -Xmx1024m
+      - "http.cors.enabled=true"
+      - "http.cors.allow-origin=http://localhost:8080"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     networks:
@@ -27,13 +52,23 @@ services:
       resources:
         limits:
           memory: 16g
-          
+
+  elasticvue:
+    image: cars10/elasticvue
+    ports:
+      - "20030:8080"
+    environment:
+      ELASTICVUE_CLUSTERS: '[{"name":"es-chipper-cluster","uri":"http://elasticsearch:9200"}]'
+    restart: always
+    networks:
+      - backend
+
   api:
     <<: *service-defaults
     build:
       context: ../services/api
     ports:
-      - 8000:8000
+      - 21210:8000
     env_file: ../services/api/.env
     depends_on:
       elasticsearch:
@@ -50,7 +85,7 @@ services:
     build:
       context: ../services/web
     ports:
-      - 5000:5000
+      - 21200:5000
     env_file: ../services/web/.env
     depends_on:
       api:
@@ -66,4 +101,5 @@ networks:
   backend:
 
 volumes:
+  ollama-data:
   elasticsearch-data:

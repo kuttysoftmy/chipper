@@ -1,4 +1,4 @@
-.PHONY: build-dev run-dev stop-dev clean-dev dev
+.PHONY: dev build-dev run-dev stop-dev clean-dev
 
 IMAGE_NAME = api-dev
 CONTAINER_NAME = api-dev
@@ -11,11 +11,15 @@ ifneq (,$(findstring MINGW,$(OS_TYPE)))
     export MSYS_NO_PATHCONV=1
 endif
 
+dev: stop-dev build-dev run-dev
+
 build-dev:
 	docker build -f $(DEV_DOCKERFILE) -t $(IMAGE_NAME) .
 
 run-dev:
 	docker run \
+		--rm  \
+		--name chipper-api-dev \
 		--env-file .env \
 		-v "$(CURDIR)/src:/app/src" \
 		-p 8000:8000 \
@@ -29,4 +33,3 @@ stop-dev:
 clean-dev: stop-dev
 	docker rmi $(IMAGE_NAME) || true
 
-dev: stop-dev build-dev run-dev
