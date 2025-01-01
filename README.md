@@ -1,5 +1,10 @@
 <p align="center"><img src="https://raw.githubusercontent.com/TilmanGriesel/chipper/refs/heads/main/docs/public/assets/banner_chipper.png" width="480" alt="Logo Chipper RAG Util"/></p>
 
+<p align="center">
+![GitHub Actions Workflow Status DockerHub](https://img.shields.io/github/actions/workflow/status/TilmanGriesel/chipper/.github%2Fworkflows%2Fpublish-docker.yml?style=for-the-badge&label=DockerHub)
+![Docker Pulls](https://img.shields.io/docker/pulls/griesel/chipper?style=for-the-badge)
+</p>
+
 **Chipper** gives you a web interface, CLI, and a hackable, simple architecture for embedding pipelines, document chunking, web scraping, and query workflows. Built with **Haystack**, **Ollama**, **Docker**, **Tailwind**, and **ElasticSearch**, it runs locally or scales as a Dockerized service.
 
 This project started as a way to help my girlfriend with her new book. The idea was to use local RAG and LLMs to ask questions about characters and explore creative possibilities, all without sharing proprietary details or your own book with cloud services like ChatGPT. What began as a bunch of scripts is now growing into a fully dockerized service architecture.
@@ -81,6 +86,10 @@ Feel free to improve, fork, copy, share or expand this project. Contributions ar
 - [ ] CI test
 - [x] Docker Hub registry images
 - [ ] Smart document chunking and embedding
+
+## Links
+
+- https://hub.docker.com/repository/docker/griesel/chipper
 
 ---
 
