@@ -18,8 +18,8 @@ function show_usage() {
     echo "Commands:"
     echo "  up                  - Start containers in detached mode"
     echo "  down                - Stop containers"
-    echo "  rebuild             - Rebuild and recreate containers"
-    echo "  clean               - Remove containers, volumes, and orphans"
+    echo "  rebuild             - Clean, rebuild and recreate images and containers"
+    echo "  clean-volumes       - Delete all volumes"
     echo "  logs                - Show container logs"
     echo "  ps                  - Show container status"
     echo "  embed [args]        - Run embed tool with optional arguments"
@@ -109,16 +109,31 @@ case "$1" in
     "down")
         docker compose -p $PROJECT_NAME down --remove-orphans
         ;;
-    "clean")
+    "rebuild")
+        echo "Stopping containers..."
+        docker compose -p $PROJECT_NAME down --remove-orphans
+    
+        echo "Removing project-related images..."
+        docker images --filter "reference=$PROJECT_NAME*" -q | xargs -r docker rmi -f
+        echo "Project images cleaned"
+        
+        echo "Rebuilding containers..."
+        docker_compose_cmd build --no-cache
+        
+        echo "Starting containers..."
+        docker_compose_cmd -p $PROJECT_NAME up -d --force-recreate
+        
+        echo "Clean and rebuild complete!"
+        ;;
+    "clean-volumes")
+        echo "Stopping containers and removing volumes..."
         docker compose -p $PROJECT_NAME down -v --remove-orphans
+        
         echo "Cleaning up volume directories..."
         rm -rfv docker/volumes
         echo "Volume directories cleaned"
-        ;;
-    "rebuild")
-        docker compose -p $PROJECT_NAME down --remove-orphans
-        docker_compose_cmd build --no-cache
-        docker_compose_cmd -p $PROJECT_NAME up -d --force-recreate
+        
+        echo "Clean complete!"
         ;;
     "embed-testdata")
         run_in_directory "tools/embed" ./run.sh "$(pwd)/tools/embed/testdata"
