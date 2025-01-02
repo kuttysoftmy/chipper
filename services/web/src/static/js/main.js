@@ -7,6 +7,7 @@ import InputHistoryManager from "./inputHistoryManager.js";
 document.addEventListener("DOMContentLoaded", () => {
   const elements = {
     messageInput: document.getElementById("message-input"),
+    welcomeMessage: document.getElementById("welcome-message"),
     chatMessages: document.getElementById("chat-messages"),
     busyIndicator: document.getElementById("busy-indicator"),
     sendButton: document.getElementById("send-button"),
@@ -68,6 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const message = elements.messageInput.value.trim();
     if (!message) return;
 
+    elements.welcomeMessage.classList.add('hidden');
     historyManager.addToHistory(message);
 
     const commandResult = chatCommandHandler.handleCommand(message);
@@ -79,14 +81,14 @@ document.addEventListener("DOMContentLoaded", () => {
         ).container
       );
       uiManager.updateMessageInput("");
-      uiManager.scrollToBottom(false);
+      uiManager.scrollToBottom();
       return;
     }
 
     const userMessage = messageRenderer.createMessageElement(message, "user");
     elements.chatMessages.appendChild(userMessage.container);
     uiManager.updateMessageInput("");
-    uiManager.scrollToBottom(false);
+    uiManager.scrollToBottom();
 
     uiManager.setBusy(true);
     chatService.addMessage("user", message);
@@ -107,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
           responseContent += chunk;
           outputDiv.innerHTML = marked.parse(responseContent);
           messageRenderer.handleCodeHighlighting(outputDiv);
-          uiManager.scrollToBottom(false);
+          uiManager.scrollToBottom();
         },
         (error) => {
           if (error !== 'AbortError') {
@@ -153,11 +155,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   elements.sendButton.addEventListener("click", sendMessage);
 
-  elements.messageInput.addEventListener("input", () => uiManager.scrollToBottom(false));
-  elements.messageInput.addEventListener("focus", () => uiManager.scrollToBottom(false));
-  elements.messageInput.addEventListener("blur", () => uiManager.scrollToBottom(false));
-  elements.messageInput.addEventListener('touchstart', () => uiManager.scrollToBottom(false));
-  elements.messageInput.addEventListener('click', () => uiManager.scrollToBottom(false));
+  elements.messageInput.addEventListener("input", () => uiManager.scrollToBottom());
+  elements.messageInput.addEventListener("focus", () => uiManager.scrollToBottom());
+  elements.messageInput.addEventListener("blur", () => uiManager.scrollToBottom());
+  elements.messageInput.addEventListener('touchstart', () => uiManager.scrollToBottom());
+  elements.messageInput.addEventListener('click', () => uiManager.scrollToBottom());
 
   elements.themeButton.addEventListener("click", uiManager.toggleTheme);
 

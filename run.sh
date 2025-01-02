@@ -31,6 +31,7 @@ function show_usage() {
     echo "  format              - Run pre-commit formatting hooks"
     echo "  browser             - Open web-interface in local browser"
     echo "  cli                 - Run cli interface"
+    echo "  docs-dev            - Run local vitepress server"
 }
 
 function check_dependency() {
@@ -88,6 +89,11 @@ done
     echo "Found user compose file"
     COMPOSE_FILES+=(-f "$USER_DOCKER_COMPOSE_FILE")
 }
+
+if [ $# -eq 0 ]; then
+    show_usage
+    exit 1
+fi
 
 case "$1" in
     up|down|logs|ps|rebuild|clean|embed*|scrape)
@@ -167,8 +173,14 @@ case "$1" in
         shift
         run_in_directory "tools/cli" ./run.sh "$@"
         ;;
+    "docs-dev")
+        echo "Starting vitepress..."
+        yarn add -D vitepress
+        yarn docs:dev
+        ;;
     *)
         show_usage
         exit 1
         ;;
 esac
+

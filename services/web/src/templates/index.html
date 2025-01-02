@@ -4,15 +4,21 @@
 <head>
     <meta charset="UTF-8" />
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+    <link href="static/favicon//favicon-96x96.png" rel="icon" sizes="96x96" type="image/png" />
+    <link href="static/favicon/favicon.svg" rel="icon" type="image/svg+xml" />
+    <link href="static/favicon/favicon.ico" rel="shortcut icon" />
+    <link href="static/favicon/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" />
+    <meta content="Chipper" name="apple-mobile-web-app-title" />
+    <link href="static/site.webmanifest" rel="manifest" />
     <script src="static/vendor/marked.min_9_1_6.js"></script>
     <script src="static/vendor/prism.js"></script>
-    <link as="font" crossorigin href="/static/font/FiraCodeNerdFontMono-Regular.ttf" rel="preload" type="font/ttf" />
+
     <link href="static/vendor/prism.css" rel="stylesheet" />
     <link href="static/vendor/prism-atom-dark.css" rel="stylesheet" />
     <link href="static/dist/index.css" rel="stylesheet" />
 </head>
 
-<body class="bg-gray-200 dark:bg-zinc-900 h-screen flex flex-col overflow-hidden">
+<body class="bg-gray-200 dark:bg-zinc-900 h-screen flex flex-col">
     <!-- theme toggle -->
     <button aria-label="Toggle dark mode"
         class="fixed top-4 right-4 sm:top-6 sm:right-6 p-2 rounded-full bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors touch-manipulation"
@@ -24,7 +30,7 @@
         </svg>
     </button>
 
-    <div class="max-w-3xl mx-auto w-full h-screen p-2 sm:p-4 flex flex-col">
+    <div class="max-w-3xl mx-auto w-full h-full p-2 sm:p-4 flex flex-col">
         <!-- message container -->
         <div class="flex-1 min-h-0 mb-2">
             <div class="relative h-full flex flex-col">
@@ -36,6 +42,15 @@
                     <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 text-gray-900 dark:text-zinc-100"
                         id="chat-messages">
                         <!-- messages -->
+
+                        <!-- welcome message -->
+                        <div class="absolute inset-0 flex items-center justify-center flex-col p-6 pointer-events-none z-10"
+                            id="welcome-message">
+                            <h2
+                                class="flex items-center text-xl font-medium opacity-50 text-gray-700 dark:text-gray-300">
+                                What can I help you with today?
+                            </h2>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -51,18 +66,18 @@
                     rows="1"></textarea>
                 <button
                     class="max-h-12 px-3 py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-full hover:bg-zinc-800 dark:hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 touch-manipulation transition-all duration-200"
-                    id="send-button" data-state="send">
+                    data-state="send" id="send-button">
                     <!-- send -->
-                    <svg class="size-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg" id="send-icon">
+                    <svg class="size-6" fill="none" id="send-icon" stroke="currentColor" stroke-width="1.5"
+                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path clip-rule="evenodd"
                             d="M11.47 2.47a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 1 1-1.06 1.06l-6.22-6.22V21a.75.75 0 0 1-1.5 0V4.81l-6.22 6.22a.75.75 0 1 1-1.06-1.06l7.5-7.5Z"
                             fill-rule="evenodd" />
                     </svg>
                     <!-- abort -->
-                    <svg class="size-6 hidden" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg" id="abort-icon">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    <svg class="size-6 hidden" fill="none" id="abort-icon" stroke="currentColor" stroke-width="1.5"
+                        viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </button>
             </div>
