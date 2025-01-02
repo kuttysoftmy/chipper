@@ -35,7 +35,7 @@ Alright, let’s get you set up! There’s one key requirement: [Docker](https:/
 
 Secondly, you’ll need Git, a version control tool that’s also the inspiration behind GitHub’s name. If you don’t already have Git installed, no worries:
 
-- [this guide will help you get started](https://docs.github.com/en/get-started/getting-started-with-git).
+- [This guide will help you get started](https://docs.github.com/en/get-started/getting-started-with-git)
 
 ## Step 2 - Project Setup
 
@@ -122,7 +122,7 @@ You can set the index using the `--es-index <name>` parameter, specify the embed
 ./tools/embed/run.sh --help
 ```
 
-### Step 5 - Where to go from here?
+## Step 5 - Where to go from here?
 
 First off, if you’ve made it this far, let me unravel the mystery behind why Chipper is called Chipper the Golden Retriever. For starters, I adore golden retrievers! But there’s more to it: they love to "chip" wood, just like we need to split and chip the data we want to embed. And as for "retriever", - well ...
 
