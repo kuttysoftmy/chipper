@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 OS_TYPE=$(uname -s)
 
 if [[ "$OS_TYPE" == *"MINGW"* || "$OS_TYPE" == *"MSYS"* ]]; then

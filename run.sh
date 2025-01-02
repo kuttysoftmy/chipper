@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 
 DOCKER_COMPOSE_FILE_BASE="docker/docker-compose.base.yml"
