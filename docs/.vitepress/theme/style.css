@@ -378,13 +378,6 @@ h1.name {
 
 :root {
   --vp-home-hero-name-color: var(--vp-c-text-1);
-
-  --vp-home-hero-image-background-image: linear-gradient(
-    -45deg,
-    #bd34fe 50%,
-    #47caff 50%
-  );
-  --vp-home-hero-image-filter: blur(44px);
 }
 
 @media (min-width: 640px) {
@@ -418,36 +411,54 @@ h1.name {
   --docsearch-primary-color: var(--vp-c-brand-1) !important;
 }
 
+@media (min-width: 960px) {
+  .image-src {
+    max-width: 280px !important;
+    max-height: 280px !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .tagline {
+    padding-top: 18px !important;
+  }
+}
+
 /**
  * Glow
  * -------------------------------------------------------------------------- */
 
-@property --rotate {
-  syntax: "<angle>";
-  initial-value: 132deg;
-  inherits: false;
+:root {
+  --vp-home-hero-image-filter: blur(80px);
 }
 
 .image-bg {
-  width: 100%;
-  height: 100%;
-  background-image: linear-gradient(
-    var(--rotate),
-    #5ddcff,
-    #f53ec7 43%,
-    #a162ff
-  ) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.image-bg::before {
+  content: "";
   position: absolute;
+  inset: 0;
   z-index: -1;
+  background: linear-gradient(132deg, #5ddcff, #f53ec7 80%);
 
   animation: spin 5.5s linear infinite;
 }
 
 @keyframes spin {
   0% {
-    --rotate: 0deg;
+    transform: rotate(0deg);
   }
   100% {
-    --rotate: 360deg;
+    transform: rotate(360deg);
+  }
+}
+
+@media (min-width: 640px) {
+  .image-bg {
+    width: 256px;
+    height: 256px;
   }
 }
