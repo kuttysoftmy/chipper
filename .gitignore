@@ -1,3 +1,8 @@
+# env
+.env
+.systemprompt
+.ragignore
+
 # docker
 /docker/user.docker-compose.yml
 /docker/user_files

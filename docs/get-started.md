@@ -25,13 +25,13 @@ Chipper essentially provides an end-to-end architecture for experimenting with e
 Everything mentioned here assumes some familiarity with the command line on your system. If you’re using Windows, consider using [MSYS](https://www.msys2.org/) or [WSL](https://learn.microsoft.com/en-us/windows/wsl/about) to make things easier.
 :::
 
-### 1.1 Install Docker 🐳
+### 1.1 Install Docker
 
 Alright, let’s get you set up! There’s one key requirement: [Docker](https://www.docker.com/). Chipper uses Docker to simplify the process and eliminate the need for a complex local setup on your machine.
 
 - [If you're new to Docker, this will get you started](https://docs.docker.com/get-started/)
 
-### 1.2 Install Git 🛡️
+### 1.2 Install Git
 
 Secondly, you’ll need Git, a version control tool that’s also the inspiration behind GitHub’s name. If you don’t already have Git installed, no worries:
 
@@ -39,7 +39,7 @@ Secondly, you’ll need Git, a version control tool that’s also the inspiratio
 
 ## Step 2: Getting Started 🚀
 
-### 2.1 Clone the Repository 📂
+### 2.1 Clone the Repository
 
 To get the latest version of Chipper on your system, you’ll need to clone it locally. Simply run the following command:
 
@@ -47,7 +47,7 @@ To get the latest version of Chipper on your system, you’ll need to clone it l
 git clone git@github.com:TilmanGriesel/chipper.git
 ```
 
-### 2.2 Launch Chipper 🚦
+### 2.2 Launch Chipper
 
 Now we’re getting somewhere! Chipper uses [Docker Compose](https://docs.docker.com/compose/) to orchestrate the various components we need to work together, such as ElasticSearch and Chipper services. The best part? You don’t have to do much to get started, Chipper comes with a default configuration ready for experimentation.
 
@@ -69,13 +69,13 @@ cd chipper
 
 Let’s verify that everything is working as expected by importing some test data included with Chipper. During this process, we’ll also pull the embedding model from Ollama if it hasn’t been downloaded yet.
 
-### 3.1 Embed Test Data 📝
+### 3.1 Embed Test Data
 
 ```bash
 ./run.sh embed-testdata
 ```
 
-### 3.2 Access the Web Interface 🌐
+### 3.2 Access the Web Interface
 
 ```bash
 ./run.sh browser
@@ -83,7 +83,7 @@ Let’s verify that everything is working as expected by importing some test dat
 
 or open: `http://localhost:21200`
 
-### 3.3 Run a Test Query 🎯
+### 3.3 Run a Test Query
 
 ```plain
 Tell me a story about Chipper, the brilliant golden retriever.
@@ -99,7 +99,7 @@ You’ll likely see a message like `Starting to download model xy.z...`. Don’t
 
 Congratulations! Now we’re diving into the details. Embeddings are organized into what’s called an `index`, which is essentially a label for a "drawer" where data or embeddings are stored. By default, Chipper uses an index named `default`. While embeddings and the web UI will automatically use this default, you can specify a different one if needed. Just remember, if you switch to another index, you’ll also need to select it in the web UI using the `/index myindex` command.
 
-### 4.1 Basic Embedding 🏗️
+### 4.1 Basic Embedding
 
 ```bash
 ./run.sh embed /my/data/path
@@ -110,7 +110,7 @@ We can only embed text data, by default Chipper accepts:
 > `.txt`, `.md`, `.py`, `.html`, `.js`, `.cpp`, `.hpp`, `.xml` extensions.
 > You can change this whitelist by passing your own `--extensions` list.
 
-### 4.2 Advanced Embedding ⚙️
+### 4.2 Advanced Embedding
 
 Now we’re ready to experiment! You can explore different splitting configurations to customize how text documents are divided. For example, you can use the `--split-by` argument to specify the method of splitting—options include "word," "sentence," "passage," "page," or "line." Adjust the `--split-length` to define the number of units per split, `--split-overlap` to set the number of units overlapping between splits, or `--split-threshold` to fine-tune the process further.
 
