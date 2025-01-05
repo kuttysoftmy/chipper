@@ -8,12 +8,30 @@ readonly DOCKER_COMPOSE_FILE="docker/docker-compose.dev.yml"
 readonly USER_DOCKER_COMPOSE_FILE="docker/docker-compose.user.yml"
 readonly PROJECT_NAME="chipper"
 readonly LOCAL_URL="http://localhost:21200"
-readonly SCRIPT_VERSION="1.0.0"
+readonly ELASTICVUE_URL="http://localhost:21230"
+readonly SCRIPT_VERSION="1.1.0"
+
+
+function show_welcome() {
+    echo ""
+    # purple
+    echo -e "\e[35m"
+    echo "        __    _                      "
+    echo "  _____/ /_  (_)___  ____  ___  _____"
+    echo " / ___/ __ \/ / __ \/ __ \/ _ \/ ___/"
+    echo "/ /__/ / / / / /_/ / /_/ /  __/ /    "
+    echo "\___/_/ /_/_/ .___/ .___/\___/_/     "
+    echo "           /_/   /_/                 "
+    echo -e "\e[0m"
+    # blue
+    echo -e "\e[34m        Chipper Run v${SCRIPT_VERSION}\e[0m"
+    echo ""
+}
+
+show_welcome
 
 function show_usage() {
     cat << EOF
-Development Environment Manager v${SCRIPT_VERSION}
-
 Usage: $0 <command> [args]
 
 Options:
@@ -35,12 +53,9 @@ Commands:
   css                 - Watch and rebuild CSS files
   format              - Run pre-commit formatting hooks
   browser             - Open web-interface in local browser
+  evue                - Open elasticvue web-interface in local browser
   cli                 - Run cli interface
   dev-docs            - Run local vitepress server
-
-Environment Variables:
-  PROJECT_NAME        - Docker project name (default: ${PROJECT_NAME})
-  LOCAL_URL          - Local development URL (default: ${LOCAL_URL})
 EOF
 }
 
@@ -69,7 +84,6 @@ function detect_docker_compose() {
         echo "docker-compose"
     else
         echo "Error: Neither 'docker compose' nor 'docker-compose' is available" >&2
-        exit 1
     fi
 }
 
@@ -92,6 +106,29 @@ function run_in_directory() {
 
 function open_browser() {
     local url="$LOCAL_URL"
+    case "$(uname -s)" in
+        Darwin)
+            open "$url"
+            ;;
+        Linux)
+            if command -v xdg-open >/dev/null; then
+                xdg-open "$url"
+            else
+                echo "Please install xdg-utils or manually open: $url"
+            fi
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            start "$url"
+            ;;
+        *)
+            echo "Unsupported operating system for automatic browser opening"
+            echo "Please manually open: $url"
+            ;;
+    esac
+}
+
+function open_elasticvue() {
+    local url="$ELASTICVUE_URL"
     case "$(uname -s)" in
         Darwin)
             open "$url"
@@ -207,11 +244,7 @@ case "$1" in
         ;;
     "clean-volumes")
         echo "Stopping containers and removing volumes..."
-        if [ "$DOCKER_COMPOSE_CMD" = "docker compose" ]; then
-            docker compose -p "$PROJECT_NAME" down -v --remove-orphans
-        else
-            docker-compose -p "$PROJECT_NAME" down -v --remove-orphans
-        fi
+        docker_compose_cmd -p "$PROJECT_NAME" down -v --remove-orphans
         
         echo "Cleaning up volume directories..."
         rm -rfv docker/volumes
@@ -264,6 +297,9 @@ case "$1" in
         ;;
     "browser")
         open_browser
+        ;;
+    "evue")
+        open_elasticvue
         ;;
     "cli")
         shift

@@ -9,7 +9,8 @@ from functools import wraps
 from pathlib import Path
 
 import elasticsearch
-from core.query import QueryPipelineConfig, RAGQueryPipeline
+from core.pipeline_config import ModelProvider, QueryPipelineConfig
+from core.rag_pipeline import RAGQueryPipeline
 from dotenv import load_dotenv
 from flask import Flask, Response, abort, jsonify, request, stream_with_context
 from flask_limiter import Limiter
@@ -67,17 +68,31 @@ system_prompt_value = load_systemprompt(os.getenv("SYSTEM_PROMPT_PATH", os.getcw
 
 
 def create_pipeline_config(model: str = None, index: str = None) -> QueryPipelineConfig:
+    provider_name = os.getenv("PROVIDER")
+    provider = ModelProvider.OLLAMA
+    if provider_name.lower() == "hf":
+        provider = ModelProvider.HUGGINGFACE
+
+    model_name = model or os.getenv("MODEL_NAME")
+    embedding_model = os.getenv("EMBEDDING_MODEL_NAME")
+    if provider == ModelProvider.HUGGINGFACE:
+        model_name = model or os.getenv("HF_MODEL_NAME")
+        embedding_model = os.getenv("HF_EMBEDDING_MODEL_NAME")
+
     return QueryPipelineConfig(
+        provider=provider,
+        hf_api_key=os.getenv("HF_API_KEY"),
+        ollama_url=os.getenv("OLLAMA_URL"),
         es_url=os.getenv("ES_URL"),
         es_index=index or os.getenv("ES_INDEX"),
-        ollama_url=os.getenv("OLLAMA_URL"),
-        model_name=model or os.getenv("MODEL_NAME"),
-        embedding_model=os.getenv("EMBEDDING_MODEL"),
+        model_name=model_name,
+        embedding_model=embedding_model,
         system_prompt=system_prompt_value,
         context_window=int(os.getenv("CONTEXT_WINDOW", 4096)),
         temperature=float(os.getenv("TEMPERATURE", 0.7)),
         seed=int(os.getenv("SEED", 0)),
         top_k=int(os.getenv("TOP_K", 5)),
+        allow_model_pull=os.getenv("ALLOW_MODEL_PULL", "True").lower() == "true",
     )
 
 
@@ -155,10 +170,14 @@ def handle_streaming_response(
         model = status.get("model", "unknown")
         status_type = status.get("status")
 
+        allow_model_pull = os.getenv("ALLOW_MODEL_PULL", "True").lower() == "true"
+        if not allow_model_pull:
+            return None
+
         if status_type == "pulling":
             return f"Starting to download model {model}..."
         elif status_type == "progress":
-            percentage = int(status.get("percentage", 0))
+            percentage = status.get("percentage", 0)
             return f"Downloading model {model}: {percentage}% complete"
         elif status_type == "complete":
             return f"Successfully downloaded model {model}"
@@ -204,10 +223,10 @@ def handle_streaming_response(
                 "full_response": result,
             }
             q.put(f"data: {json.dumps(final_data)}\n\n")
-        except elasticsearch.BadRequestError:
+        except elasticsearch.BadRequestError as e:
             error_data = {
                 "type": "chat_response",
-                "chunk": "Error: Embedding retriever error. Index not found.\n",
+                "chunk": f"Error: Embedding retriever error. {str(e)}.\n",
                 "done": True,
             }
             q.put(f"data: {json.dumps(error_data)}\n\n")
