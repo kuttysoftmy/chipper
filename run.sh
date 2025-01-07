@@ -13,19 +13,17 @@ readonly SCRIPT_VERSION="1.1.0"
 
 
 function show_welcome() {
-    echo ""
-    # purple
-    echo -e "\e[35m"
-    echo "        __    _                      "
-    echo "  _____/ /_  (_)___  ____  ___  _____"
-    echo " / ___/ __ \/ / __ \/ __ \/ _ \/ ___/"
-    echo "/ /__/ / / / / /_/ / /_/ /  __/ /    "
-    echo "\___/_/ /_/_/ .___/ .___/\___/_/     "
-    echo "           /_/   /_/                 "
-    echo -e "\e[0m"
-    # blue
-    echo -e "\e[34m        Chipper Run v${SCRIPT_VERSION}\e[0m"
-    echo ""
+    printf "\n"
+    printf "\033[35m"
+    printf "        __    _                      \n"
+    printf "  _____/ /_  (_)___  ____  ___  _____\n"
+    printf " / ___/ __ \/ / __ \/ __ \/ _ \/ ___/\n"
+    printf "/ /__/ / / / / /_/ / /_/ /  __/ /    \n"
+    printf "\___/_/ /_/_/ .___/ .___/\___/_/     \n"
+    printf "           /_/   /_/                 \n"
+    printf "\033[0m\n"
+    printf "\033[34m        Chipper Run v%s\033[0m\n" "${SCRIPT_VERSION}"
+    printf "\n"
 }
 
 show_welcome
@@ -211,16 +209,8 @@ esac
 # Main command handling
 case "$1" in
     "up")
-        python env_setup.py
-        if [ "$DOCKER_COMPOSE_CMD" = "docker compose" ]; then
-            docker compose -p "$PROJECT_NAME" down --remove-orphans
-        else
-            if [ "$DOCKER_COMPOSE_CMD" = "docker compose" ]; then
-            docker compose -p "$PROJECT_NAME" down --remove-orphans
-        else
-            docker-compose -p "$PROJECT_NAME" down --remove-orphans
-        fi
-        fi
+        python setup.py
+        docker_compose_cmd -p "$PROJECT_NAME" down --remove-orphans
         docker_compose_cmd -p "$PROJECT_NAME" up -d
         ;;
     "down")
@@ -237,7 +227,7 @@ case "$1" in
         echo "Rebuilding containers..."
         docker_compose_cmd build --no-cache
         
-        python env_setup.py
+        python setup.py
 
         echo "Starting containers..."
         docker_compose_cmd -p "$PROJECT_NAME" up -d --force-recreate
@@ -245,7 +235,7 @@ case "$1" in
         echo "Clean and rebuild complete!"
         ;;
     "clean-volumes")
-        python env_setup.py
+        python setup.py
 
         echo "Stopping containers and removing volumes..."
         docker_compose_cmd -p "$PROJECT_NAME" down -v --remove-orphans
@@ -258,7 +248,7 @@ case "$1" in
         ;;
     "clean-env")
         echo "Cleaning environment files..."
-        python env_setup.py --clean
+        python setup.py --clean
         ;;
     "logs")
         docker_compose_cmd -p "$PROJECT_NAME" logs -f
