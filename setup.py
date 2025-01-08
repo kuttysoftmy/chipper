@@ -33,7 +33,15 @@ EXTERNAL_OLLAMA_URL = None
 
 def check_external_ollama_requirement() -> bool:
     system = platform.system()
+    release = platform.release()
+
+    log_info(f"Platform: {system}/{release}")
+
     if system in ["Darwin", "Linux"]:
+        is_wsl = "microsoft" in release.lower()
+        if is_wsl:
+            return False
+
         log_info(f"Using external Ollama server at {EXTERNAL_OLLAMA_URL}")
         log_warning("--------------------")
         log_warning(
