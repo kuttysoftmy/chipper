@@ -3,11 +3,21 @@ import os
 import platform
 import secrets
 import shutil
+import socket
 import subprocess
 from pathlib import Path
+from urllib.parse import urlparse
+
+DEFAULT_INTERNAL_OLLAMA_URL = "http://ollama:11434"
+# Note: Not linux compatible refs: https://stackoverflow.com/questions/48546124/what-is-the-linux-equivalent-of-host-docker-internal
+DEFAULT_EXTERNAL_OLLAMA_URL = "http://host.docker.internal:11434"
+DEFAULT_EXTERNAL_LOCAL_OLLAMA_URL = "http://localhost:11434"
+EXAMPLE_API_KEY = "EXAMPLE_API_KEY"
+
+SHARED_API_KEY = None
+EXTERNAL_OLLAMA_URL = None
 
 
-# ANSI color codes
 class Colors:
     RED = "\033[0;31m"
     GREEN = "\033[0;32m"
@@ -27,33 +37,60 @@ def log_error(message):
     print(f"{Colors.RED}[ERROR]{Colors.NC} {message}")
 
 
-SHARED_API_KEY = None
-EXTERNAL_OLLAMA_URL = None
+def check_ollama_availability(url: str) -> bool:
+    try:
+        parsed = urlparse(url)
+        host = parsed.hostname
+        port = parsed.port or 11434
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(5)
+        result = sock.connect_ex((host, port))
+        sock.close()
+
+        return result == 0
+    except (socket.error, ValueError):
+        return False
 
 
-def check_external_ollama_requirement() -> bool:
+def check_external_ollama_requirement(gpu_profile: str) -> bool:
     system = platform.system()
     release = platform.release()
 
     log_info(f"Platform: {system}/{release}")
+    log_info(f"GPU Profile: {gpu_profile}")
 
-    if system in ["Darwin", "Linux"]:
-        is_wsl = "microsoft" in release.lower()
-        if is_wsl:
-            return False
+    requires_external = system in ["Darwin"] or gpu_profile == "cpu"
+    is_wsl = "microsoft" in release.lower()
 
-        log_info(f"Using external Ollama server at {EXTERNAL_OLLAMA_URL}")
-        log_warning("--------------------")
-        log_warning(
-            "Note: Currently GPU support in Docker Desktop is only available on Windows with the WSL2 backend."
-        )
-        log_warning(
-            "Please ensure you have Ollama installed and running at the specified URL."
-        )
-        log_warning("You must set up Ollama manually before using Chipper.")
-        log_warning("Download and installation instructions: https://ollama.com")
-        log_warning("--------------------")
+    if requires_external:
+        log_info(f"Using external Ollama server at {DEFAULT_EXTERNAL_OLLAMA_URL}")
+        # Note: We nee to use the localhost url since we are not in a container.
+        if not check_ollama_availability(DEFAULT_EXTERNAL_LOCAL_OLLAMA_URL):
+            message = (
+                "Cannot connect to local Ollama server\n\n"
+                "--------------------------------------------------------------------------------\n\n"
+                "The internal Ollama container is not supported on your platform.\n"
+                "You must install and run Ollama manually before using Chipper.\n\n"
+                "1. Download and install Ollama from: https://ollama.com\n"
+                "2. Start the Ollama service\n"
+                "3. Ensure it's running at: "
+                + DEFAULT_EXTERNAL_LOCAL_OLLAMA_URL
+                + "\n\n"
+                "Note: GPU support in Docker Desktop is currently only available\n"
+                "on Windows with the WSL2 backend\nor via the Linux NVIDIA Container Toolkit.\n\n"
+                "You can ignore this message if you are using an external\n"
+                "Ollama endpoint or HuggingFace inference service.\n\n"
+                "--------------------------------------------------------------------------------\n\n"
+            )
+            log_warning(message)
+            return True
+
         return True
+
+    if is_wsl:
+        log_info("WSL Linux detected")
+
     return False
 
 
@@ -70,7 +107,7 @@ def detect_gpu_profile():
     # Check macOS
     if system == "Darwin":
         log_info("Detected macOS system")
-        return "macos"
+        return "metal"
 
     # Check NVIDIA GPU
     try:
@@ -106,7 +143,7 @@ def has_example_api_key_set(env_file):
     try:
         with open(env_file, "r") as file:
             content = file.read()
-        return "API_KEY=EXAMPLE_API_KEY" in content
+        return f"API_KEY={EXAMPLE_API_KEY}" in content
     except Exception as e:
         log_error(f"Failed to read {env_file}: {str(e)}")
         return False
@@ -116,7 +153,7 @@ def has_ollama_key(env_file):
     try:
         with open(env_file, "r") as file:
             content = file.read()
-        return "OLLAMA_URL=http://host.docker.internal:21240" in content
+        return f"OLLAMA_URL={DEFAULT_INTERNAL_OLLAMA_URL}" in content
     except Exception as e:
         log_error(f"Failed to read {env_file}: {str(e)}")
         return False
@@ -131,7 +168,7 @@ def update_env_file(env_file, updates):
             if f"{key}=" in content:
                 if key == "API_KEY":
                     content = content.replace(
-                        f"{key}=EXAMPLE_API_KEY", f"{key}={value}"
+                        f"{key}={EXAMPLE_API_KEY}", f"{key}={value}"
                     )
                 elif key == "OLLAMA_URL":
                     lines = content.split("\n")
@@ -246,7 +283,7 @@ def main():
     )
     parser.add_argument(
         "--ollama-url",
-        help="URL for external Ollama server (default: http://host.docker.internal:11434/)",
+        help=f"URL for external Ollama server (default: {DEFAULT_INTERNAL_OLLAMA_URL})",
     )
     args = parser.parse_args()
 
@@ -257,9 +294,7 @@ def main():
     # Set Ollama URL from environment variable or command line argument
     global EXTERNAL_OLLAMA_URL
     EXTERNAL_OLLAMA_URL = (
-        args.ollama_url
-        or os.environ.get("OLLAMA_URL")
-        or "http://host.docker.internal:11434/"
+        args.ollama_url or os.environ.get("OLLAMA_URL") or DEFAULT_EXTERNAL_OLLAMA_URL
     )
 
     # Generate API key
@@ -272,7 +307,7 @@ def main():
     create_docker_env(gpu_profile)
 
     # Check Ollama configuration
-    use_external_ollama = check_external_ollama_requirement()
+    use_external_ollama = check_external_ollama_requirement(gpu_profile)
 
     if args.docker_only:
         return 0
