@@ -41,7 +41,7 @@ export class ChatService {
       if (!response.ok) {
         if (response.status === 429)
           throw new Error(`Rate limit exceeded. Please try again later.`);
-        
+
         throw new Error(`Server responded with status ${response.status}`);
       }
 
@@ -51,8 +51,8 @@ export class ChatService {
         await this.handleNonStreamingResponse(response, onChunk, onError);
       }
     } catch (error) {
-      if (error.name === 'AbortError') {
-        console.info('Request aborted');
+      if (error.name === "AbortError") {
+        console.info("Request aborted");
         await this.notifyServerAbort();
         return;
       }
@@ -68,7 +68,7 @@ export class ChatService {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-        }
+        },
       });
       if (!response.ok) {
         console.error("Failed to notify server about abort");
@@ -86,6 +86,7 @@ export class ChatService {
     const reader = response.body.getReader();
     const decoder = new TextDecoder("utf-8");
     let buffer = "";
+    let isFirstChunk = true;
 
     try {
       while (true) {
@@ -112,7 +113,12 @@ export class ChatService {
               return;
             }
             if (data.chunk) {
-              onChunk(data.chunk);
+              // trim the first chunk to remove potential leading whitespace
+              const chunk = isFirstChunk ? data.chunk.trimLeft() : data.chunk;
+              if (chunk.length > 0) {
+                onChunk(chunk);
+                isFirstChunk = false;
+              }
             }
             if (data.done) break;
           } catch (parseError) {
@@ -121,7 +127,7 @@ export class ChatService {
         }
       }
     } catch (error) {
-      if (error.name === 'AbortError') {
+      if (error.name === "AbortError") {
         throw error;
       }
       throw new Error(`Stream reading error: ${error.message}`);
@@ -141,7 +147,9 @@ export class ChatService {
     if (data.success && data.messages) {
       const lastMessage = data.messages[data.messages.length - 1];
       if (lastMessage.role === "assistant") {
-        onChunk(lastMessage.content);
+        // trim leading whitespace
+        const trimmedContent = lastMessage.content.trimLeft();
+        onChunk(trimmedContent);
         this.messages = data.messages;
       }
     }
