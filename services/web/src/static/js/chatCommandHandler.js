@@ -1,14 +1,5 @@
 export class ChatCommandHandler {
-  constructor(
-    onModelChange,
-    onIndexChange,
-    onStreamChange,
-    onClear,
-    onToggleTheme,
-    onToggleWide,
-    urlParamsHandler,
-    onToggleTTS
-  ) {
+  constructor(onModelChange, onIndexChange, onStreamChange, onClear, onToggleTheme, onToggleWide, urlParamsHandler, onToggleTTS) {
     this.onModelChange = onModelChange;
     this.onIndexChange = onIndexChange;
     this.onStreamChange = onStreamChange;
@@ -70,8 +61,7 @@ export class ChatCommandHandler {
       "/wide": () => {
         this.onToggleWide();
         if (this.urlParamsHandler) {
-          const isWide =
-            document.documentElement.classList.contains("wide-mode");
+          const isWide = document.documentElement.classList.contains("wide-mode");
           this.urlParamsHandler.updateURL("wide", isWide ? "1" : "0");
         }
         return { type: "system", content: "Wide mode toggled" };
@@ -84,9 +74,9 @@ export class ChatCommandHandler {
           type: "system",
           content: `Text-to-speech is \`${enabled ? "on" : "off"}\`\n${
             enabled
-              ? "> **Note:** A TTS model (90 MByte) will be downloaded and client side Wasm inference will be initialized. This may temporarily causes lags. "
-              + "There is also no indication on the TTS inference status in the UI, watch the logs for more information. "
-              + "The client side TTS is considered very experimental."
+              ? "> **Note:** A TTS model (90 MByte) will be downloaded and client side Wasm inference will be initialized. This may temporarily causes lags. " +
+                "There is also no indication on the TTS inference status in the UI, watch the logs for more information. " +
+                "The client side TTS is considered very experimental."
               : ""
           }`,
         };
@@ -99,7 +89,7 @@ export class ChatCommandHandler {
 
   getHelpMessage() {
     return `### Available Commands
-  
+
   \`/model [name]\` - Change AI model
   \`/index [name]\` - Change knowledge base index
   \`/stream [0/1]\` - Enable or disable response streaming
@@ -108,9 +98,9 @@ export class ChatCommandHandler {
   \`/wide\` - Toggle wide mode
   \`/tts [on/off]\` - Toggle client side Wasm TTS (Beta)
   \`/help\` - Show this help message
-  
+
   You can also set initial values using URL parameters:
   \`?model=name&index=name&stream=1&theme=dark&wide=1\``;
   }
 }
-0
+0;

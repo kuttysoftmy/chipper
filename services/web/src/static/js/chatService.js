@@ -39,8 +39,7 @@ export class ChatService {
       });
 
       if (!response.ok) {
-        if (response.status === 429)
-          throw new Error(`Rate limit exceeded. Please try again later.`);
+        if (response.status === 429) throw new Error(`Rate limit exceeded. Please try again later.`);
 
         throw new Error(`Server responded with status ${response.status}`);
       }
@@ -130,7 +129,7 @@ export class ChatService {
                   sid: 0,
                   speed: 1,
                 },
-                "*"
+                "*",
               );
               break;
             }
