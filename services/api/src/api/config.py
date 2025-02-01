@@ -24,9 +24,16 @@ app.wsgi_app = ProxyFix(app.wsgi_app)
 APP_VERSION = os.getenv("APP_VERSION", "[DEV]")
 BUILD_NUMBER = os.getenv("APP_BUILD_NUM", "0")
 
+# Provider settings
+PROVIDER_IS_OLLAMA = os.getenv("PROVIDER", "ollama") == "ollama"
+
 # Feature flags
 ALLOW_MODEL_CHANGE = os.getenv("ALLOW_MODEL_CHANGE", "true").lower() == "true"
 ALLOW_INDEX_CHANGE = os.getenv("ALLOW_INDEX_CHANGE", "true").lower() == "true"
+ALLOW_MODEL_PARAMETER_CHANGE = (
+    os.getenv("ALLOW_MODEL_PARAMETER_CHANGE", "true").lower() == "true"
+)
+IGNORE_MODEL_REQUEST = os.getenv("IGNORE_MODEL_REQUEST", "true").lower() == "true"
 DEBUG = os.getenv("DEBUG", "true").lower() == "true"
 
 # Rate limiting configuration
@@ -53,7 +60,7 @@ def load_systemprompt(base_path: str) -> str:
     env_var_name = "SYSTEM_PROMPT"
     env_prompt = os.getenv(env_var_name)
 
-    if env_prompt is not None:
+    if env_prompt is not None and env_prompt.strip() != "":
         content = env_prompt.strip()
         logger.info(
             f"Using system prompt from '{env_var_name}' environment variable; content: '{content}'"
@@ -83,4 +90,4 @@ def load_systemprompt(base_path: str) -> str:
         return default_prompt
 
 
-system_prompt_value = load_systemprompt(os.getenv("SYSTEM_PROMPT_PATH", os.getcwd()))
+SYSTEM_PROMPT_VALUE = load_systemprompt(os.getenv("SYSTEM_PROMPT_PATH", os.getcwd()))
