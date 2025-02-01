@@ -1,6 +1,5 @@
 import argparse
 import hashlib
-import json
 import logging
 import os
 import secrets
@@ -262,23 +261,14 @@ def create_app():
                                 api_response.close()
                                 yield 'data: {"type": "abort", "content": "Request aborted"}\n\n'
                                 break
+
                             if chunk:
-                                try:
-                                    chunk_data = json.loads(chunk.decode())
-                                    formatted_chunk = {
-                                        "chunk": chunk_data.get("message", {}).get(
-                                            "content", ""
-                                        ),
-                                        "done": chunk_data.get("done", False),
-                                    }
-                                    if chunk_data.get("done"):
-                                        formatted_chunk["full_response"] = chunk_data
-                                    yield f"data: {json.dumps(formatted_chunk)}\n\n"
-                                except json.JSONDecodeError:
-                                    yield f'data: {{"chunk": {json.dumps(chunk.decode())}, "done": false}}\n\n'
+                                # Just proxy the chunk directly with minimal processing
+                                yield f"data: {chunk.decode()}\n\n"
+
                     except Exception as e:
                         logger.error(f"Stream error: {str(e)}")
-                        yield f'data: {{"error": "{str(e)}", "done": true, "done_reason": "error"}}\n\n'
+                        yield f'data: {{"error": "{str(e)}", "done": true}}\n\n'
 
                 return Response(
                     stream_with_context(generate()),
