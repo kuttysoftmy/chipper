@@ -61,7 +61,7 @@ def get_api_health() -> Dict[str, Any]:
         return response.json()
     except Exception as e:
         logger.error(f"API health check failed: {str(e)}")
-        return {"status": "unhealthy", "error": str(e)}
+        return {"status": "unhealthy", "error": "An internal error has occurred."}
 
 
 class SessionManager:
@@ -304,8 +304,15 @@ def create_app():
                 if hasattr(e, "response") and e.response is not None
                 else 500
             )
+            logger.error(f"RequestException: {str(e)}")
             return (
-                jsonify({"error": str(e), "done": True, "done_reason": "error"}),
+                jsonify(
+                    {
+                        "error": "An internal error has occurred",
+                        "done": True,
+                        "done_reason": "error",
+                    }
+                ),
                 status_code,
             )
 
@@ -319,8 +326,8 @@ def create_app():
             session_manager.abort_chat(session_id)
             return jsonify({"status": "success", "message": "Chat aborted"})
         except Exception as e:
-            logger.error(f"Error aborting chat: {str(e)}")
-            return jsonify({"error": str(e)}), 500
+            logger.error(f"Error aborting chat: {str(e)}", exc_info=True)
+            return jsonify({"error": "An internal error has occurred"}), 500
 
     @app.route("/")
     def index():
