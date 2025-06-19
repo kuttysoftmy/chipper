@@ -56,7 +56,7 @@ typing-extensions==4.13.0
     # via
     #   limits
     #   rich
-urllib3==2.3.0
+urllib3==2.5.0
     # via requests
 werkzeug==3.1.3
     # via flask
