@@ -6,9 +6,9 @@
 #
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.11.14
+aiohttp==3.13.3
     # via -r requirements.in
-aiosignal==1.3.2
+aiosignal==1.4.0
     # via aiohttp
 async-timeout==5.0.1
     # via aiohttp
@@ -76,6 +76,7 @@ trafilatura==2.0.0
     # via -r requirements.in
 typing-extensions==4.13.0
     # via
+    #   aiosignal
     #   beautifulsoup4
     #   multidict
 tzlocal==5.3.1
