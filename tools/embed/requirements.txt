@@ -184,7 +184,7 @@ typing-extensions==4.13.0
     #   typing-inspection
 typing-inspection==0.4.0
     # via pydantic
-urllib3==2.3.0
+urllib3==2.6.3
     # via
     #   elastic-transport
     #   requests
