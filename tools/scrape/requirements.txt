@@ -80,7 +80,7 @@ typing-extensions==4.13.0
     #   multidict
 tzlocal==5.3.1
     # via dateparser
-urllib3==2.3.0
+urllib3==2.6.3
     # via
     #   courlan
     #   htmldate
